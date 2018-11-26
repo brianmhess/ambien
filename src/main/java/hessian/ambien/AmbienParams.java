@@ -31,10 +31,10 @@ public class AmbienParams {
     public static String usage() {
         StringBuilder usage = new StringBuilder();
         usage.append("OPTIONS:\n");
-        usage.append("  -host <hostname>               Contact point for DSE\n");
-        usage.append("  -k <keyspacename>              Keyspace to use\n");
-        usage.append("  -t <tablename>                 Table to use\n");
-        usage.append("  -o <outputDir>                 Directory to write to\n");
+        usage.append("  -host <hostname>               Contact point for DSE [required]\n");
+        usage.append("  -k <keyspacename>              Keyspace to use [required]\n");
+        usage.append("  -t <tablename>                 Table to use [required]\n");
+        usage.append("  -o <outputDir>                 Directory to write to (must be empty) [required]\n");
         usage.append("  -configFile <filename>         File with configuration options [none]\n");
         usage.append("  -port <portNumber>             CQL Port Number [9042]\n");
         usage.append("  -user <username>               Cassandra username [none]\n");
