@@ -26,3 +26,33 @@ OPTIONS:
   -ssl-keystore-pw <pwd>         Password for SSL keystore [none]
 
 ```
+
+This will produce a directory of source code in the supplied directory.
+After running Ambien, change directory to the output directory and run:
+
+`mvn clean package`
+
+And then start the service with:
+
+`java -jar target/ambien-0.0.1-SNAPSHOT.jar`
+
+## Current API calls
+Print Hello World:
+```
+http://hostname:8222/api/hello
+```
+Select all rows:
+```
+http://hostname:8222/api/
+```
+Select by partition keys
+```
+http://hostname:8222/api/<partitionKey1>/<partitionKey2>/.../<partitionKeyN>
+```
+Select by partition keys and clustering key(s)
+```
+http://hostname:8222/api/<partitionKey1>/<partitionKey2>/.../<partitionKeyN>
+http://hostname:8222/api/<partitionKey1>/<partitionKey2>/.../<partitionKeyN>/<clustering1>/
+http://hostname:8222/api/<partitionKey1>/<partitionKey2>/.../<partitionKeyN>/<clustering1>/<clustering2>/
+http://hostname:8222/api/<partitionKey1>/<partitionKey2>/.../<partitionKeyN>/<clustering1>/<clustering2>/.../<clusteringM>/
+```
