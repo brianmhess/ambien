@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutionException;
 
 public class Ambien {
     private String version = "0.0.1";
+    /*
     private String host = null;
     private int port = 9042;
     private String username = null;
@@ -42,124 +43,42 @@ public class Ambien {
     private String truststorePwd = null;
     private String keystorePath = null;
     private String keystorePwd = null;
-    private Cluster cluster = null;
-    private Session session = null;
     private String table_name = null;
     private String keyspace_name = null;
     private String output_dir = null;
+    */
+    private AmbienParams params = new AmbienParams();
+
+    private Cluster cluster = null;
+    private Session session = null;
 
     private String cqlSchema = null;
     private String filename = null;
 
     private String usage() {
         StringBuilder usage = new StringBuilder("version: ").append(version).append("\n");
+        usage.append("Usage: ambien -host <hostname> -k <keyspaceName> -t <tableName> -o <outputDir> [options]\n");
+        usage.append(AmbienParams.usage());
         return usage.toString();
     }
-    
-    private boolean validateArgs() {
-        if (null == host) {
-            System.err.println("No host provided.");
-            return false;
-        }
-        if (null == table_name) {
-            System.err.println("No table name provided.");
-            return false;
-        }
 
-        if (null == keyspace_name) {
-            System.err.println("No keyspace name provided.");
-            return false;
-        }
-
-        if (null == output_dir) {
-            System.err.println("No output directory provided.");
-            return false;
-        }
-
-        return true;
-    }
-    
-    private boolean processConfigFile(String fname, Map<String, String> amap)
-        throws IOException, FileNotFoundException {
-        File cFile = new File(fname);
-        if (!cFile.isFile()) {
-            System.err.println("Configuration File must be a file");
-            return false;
-        }
-
-        BufferedReader cReader = new BufferedReader(new FileReader(cFile));
-        String line;
-        while ((line = cReader.readLine()) != null) {
-            String[] fields = line.trim().split("\\s+");
-            if (2 != fields.length) {
-                System.err.println("Bad line in config file: " + line);
-                return false;
-            }
-            if (null == amap.get(fields[0])) {
-                amap.put(fields[0], fields[1]);
-            }
-        }
-        return true;
-    }
-
-    private boolean parseArgs(String[] args)
-        throws IOException, FileNotFoundException {
-        String tkey;
-        if (args.length == 0) {
-            System.err.println("No arguments specified");
-            return false;
-        }
-        if (0 != args.length % 2)
-            return false;
-
-        Map<String, String> amap = new HashMap<String,String>();
-        for (int i = 0; i < args.length; i+=2) {
-            amap.put(args[i], args[i+1]);
-        }
-
-        if (null != (tkey = amap.remove("-configFile")))
-            if (!processConfigFile(tkey, amap))
-                return false;
-
-        host = amap.remove("-host");
-        if (null == host) { // host is required
-            System.err.println("Must provide a host");
-            return false;
-        }
-
-        if (null != (tkey = amap.remove("-port")))          port = Integer.parseInt(tkey);
-        if (null != (tkey = amap.remove("-user")))          username = tkey;
-        if (null != (tkey = amap.remove("-pw")))            password = tkey;
-        if (null != (tkey = amap.remove("-ssl-truststore-path"))) truststorePath = tkey;
-        if (null != (tkey = amap.remove("-ssl-truststore-pw")))  truststorePwd =  tkey;
-        if (null != (tkey = amap.remove("-ssl-keystore-path")))   keystorePath = tkey;
-        if (null != (tkey = amap.remove("-ssl-keystore-pw")))    keystorePwd = tkey;
-        if (null != (tkey = amap.remove(("-t"))))               table_name = tkey;
-        if (null != (tkey = amap.remove(("-k"))))               keyspace_name = tkey;
-        if (null != (tkey = amap.remove(("-o"))))               output_dir = tkey;
-
-
-        return validateArgs();
-    }
-
-    /*
     private SSLOptions createSSLOptions()
         throws KeyStoreException, FileNotFoundException, IOException, NoSuchAlgorithmException,
             KeyManagementException, CertificateException, UnrecoverableKeyException {
         TrustManagerFactory tmf = null;
         KeyStore tks = KeyStore.getInstance("JKS");
-        tks.load((InputStream) new FileInputStream(new File(truststorePath)),
-                 truststorePwd.toCharArray());
+        tks.load((InputStream) new FileInputStream(new File(params.truststorePath)),
+                params.truststorePwd.toCharArray());
         tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(tks);
 
         KeyManagerFactory kmf = null;
-        if (null != keystorePath) {
+        if (null != params.keystorePath) {
             KeyStore kks = KeyStore.getInstance("JKS");
-            kks.load((InputStream) new FileInputStream(new File(keystorePath)),
-                     keystorePwd.toCharArray());
+            kks.load((InputStream) new FileInputStream(new File(params.keystorePath)),
+                    params.keystorePwd.toCharArray());
             kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-            kmf.init(kks, keystorePwd.toCharArray());
+            kmf.init(kks, params.keystorePwd.toCharArray());
         }
 
         SSLContext sslContext = SSLContext.getInstance("TLS");
@@ -169,20 +88,19 @@ public class Ambien {
 
         return RemoteEndpointAwareJdkSSLOptions.builder().withSSLContext(sslContext).build();
     }
-    */
 
     private void setup()
         throws IOException, KeyStoreException, NoSuchAlgorithmException, KeyManagementException,
                CertificateException, UnrecoverableKeyException  {
         // Connect to Cassandra
         Cluster.Builder clusterBuilder = Cluster.builder()
-            .addContactPoint(host)
-            .withPort(port)
+            .addContactPoint(params.host)
+            .withPort(params.port)
             .withLoadBalancingPolicy(new TokenAwarePolicy( DCAwareRoundRobinPolicy.builder().build()));
-        if (null != username)
-            clusterBuilder = clusterBuilder.withCredentials(username, password);
-        //if (null != truststorePath)
-          //  clusterBuilder = clusterBuilder.withSSL(createSSLOptions());
+        if (null != params.username)
+            clusterBuilder = clusterBuilder.withCredentials(params.username, params.password);
+        if (null != params.truststorePath)
+            clusterBuilder = clusterBuilder.withSSL(createSSLOptions());
 
         cluster = clusterBuilder.build();
         if (null == cluster) {
@@ -202,7 +120,7 @@ public class Ambien {
         throws IOException, ParseException, InterruptedException, ExecutionException,
                KeyStoreException, NoSuchAlgorithmException, KeyManagementException,
                CertificateException, UnrecoverableKeyException {
-        if (false == parseArgs(args)) {
+        if (false == params.parseArgs(args)) {
             System.err.println("Bad arguments");
             System.err.println(usage());
             return false;
@@ -210,7 +128,7 @@ public class Ambien {
 
         // Setup
         setup();
-        File outFile = new File(output_dir);
+        File outFile = new File(params.output_dir);
         if (!outFile.isDirectory()) {
             System.err.println("Output directory must be a directory");
             return false;
@@ -222,14 +140,14 @@ public class Ambien {
 
         // Get Metadata for Table
         Metadata m = cluster.getMetadata();
-        KeyspaceMetadata km = m.getKeyspace(keyspace_name);
+        KeyspaceMetadata km = m.getKeyspace(params.keyspace_name);
         if (null == km) {
-            System.err.println("Keyspace " + keyspace_name + " not found");
+            System.err.println("Keyspace " + params.keyspace_name + " not found");
             return false;
         }
-        TableMetadata tm = km.getTable(table_name);
+        TableMetadata tm = km.getTable(params.table_name);
         if (null == tm) {
-            System.err.println("Table " + table_name + " not found");
+            System.err.println("Table " + params.table_name + " not found");
             return false;
         }
         List<ColumnMetadata> clusteringCols = tm.getClusteringColumns();
@@ -240,19 +158,19 @@ public class Ambien {
         CodecRegistry cr = cluster.getConfiguration().getCodecRegistry();
 
         // Produce Boilerplate (pom.xml, etc)
-        AmbienBoilerplate ab = new AmbienBoilerplate(output_dir, host, keyspace_name);
+        AmbienBoilerplate ab = new AmbienBoilerplate(params);
         if (!ab.produceBoilerplate()) return false;
 
         // Produce Domain Classes
-        AmbienDomain ad = new AmbienDomain(table_name, output_dir, partitionCols, clusteringCols, regularCols, cr);
+        AmbienDomain ad = new AmbienDomain(params, partitionCols, clusteringCols, regularCols, cr);
         if(!ad.produceDomainClasses()) return false;
 
         // Produce Repository Classes
-        AmbienRepository ar = new AmbienRepository(table_name, output_dir, partitionCols, clusteringCols, regularCols, cr);
+        AmbienRepository ar = new AmbienRepository(params, partitionCols, clusteringCols, regularCols, cr);
         if(!ar.produceRepositoryClasses()) return false;
 
         // Produce Controller Classes
-        AmbienController ac = new AmbienController(table_name, output_dir, partitionCols, clusteringCols, regularCols, cr);
+        AmbienController ac = new AmbienController(params, partitionCols, clusteringCols, regularCols, cr);
         if(!ac.produceControllerClasses()) return false;
 
         return true;
@@ -267,6 +185,7 @@ public class Ambien {
         if (success) {
             System.exit(0);
         } else {
+            System.err.println("There was an error");
             System.exit(-1);
         }
     }

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AmbienDomain {
+    private AmbienParams params = null;
     private String name = null;
     private String cap_name = null;
     private CodecRegistry cr = null;
@@ -16,10 +17,11 @@ public class AmbienDomain {
     private List<ColumnMetadata> clusteringCols = null;
     private List<ColumnMetadata> regularCols = null;
 
-    public AmbienDomain(String name, String output_dir, List<ColumnMetadata> partitionCols, List<ColumnMetadata> clusteringCols, List<ColumnMetadata> regularCols, CodecRegistry cr) {
-        this.name = name;
+    public AmbienDomain(AmbienParams params, List<ColumnMetadata> partitionCols, List<ColumnMetadata> clusteringCols, List<ColumnMetadata> regularCols, CodecRegistry cr) {
+        this.params = params;
+        this.name = params.table_name;
         this.cap_name = Ambien.capName(name);
-        this.output_dir = output_dir;
+        this.output_dir = params.output_dir;
         this.partitionCols = partitionCols;
         this.clusteringCols = clusteringCols;
         this.regularCols = regularCols;
@@ -51,21 +53,21 @@ public class AmbienDomain {
         List<String> primaryColName = new ArrayList<String>(partitionCols.size() + clusteringCols.size());
         List<String> primaryColType = new ArrayList<String>(partitionCols.size() + clusteringCols.size());
         for(int i = 0; i < partitionCols.size(); i++) {
-            primaryColName.set(i, partitionCols.get(i).getName());
-            primaryColType.set(i, cr.codecFor(partitionCols.get(i).getType()).getJavaType().getClass().getName());
+            primaryColName.add(i, partitionCols.get(i).getName());
+            primaryColType.add(i, cr.codecFor(partitionCols.get(i).getType()).getJavaType().getRawType().getName());
             sb.append("\t@PrimaryKeyColumn(name =\"" + primaryColName.get(i) + "\", ordinal = " + i + ", type = PrimaryKeyType.PARTITIONED)\n");
             sb.append("\tprivate " + primaryColType.get(i) + " " + primaryColName.get(i) + ";\n\n");
         }
         for(int i = 0; i < clusteringCols.size(); i++) {
-            primaryColName.set(i + partitionCols.size(), clusteringCols.get(i).getName());
-            primaryColType.set(i + partitionCols.size(), cr.codecFor(clusteringCols.get(i).getType()).getJavaType().getClass().getName());
-            sb.append("\t@PrimaryKeyColumn(name =\"" + primaryColName.get(i + partitionCols.size()) + "\", ordinal = " + i + partitionCols.size() + ", type = PrimaryKeyType.CLUSTERED)\n");
+            primaryColName.add(i + partitionCols.size(), clusteringCols.get(i).getName());
+            primaryColType.add(i + partitionCols.size(), cr.codecFor(clusteringCols.get(i).getType()).getJavaType().getRawType().getName());
+            sb.append("\t@PrimaryKeyColumn(name =\"" + primaryColName.get(i + partitionCols.size()) + "\", ordinal = " + (i + partitionCols.size()) + ", type = PrimaryKeyType.CLUSTERED)\n");
             sb.append("\tprivate " + primaryColType.get(i + partitionCols.size()) + " " + primaryColName.get(i + partitionCols.size()) + ";\n\n");
         }
 
 
         // Contructor
-        sb.append("\tpublic " + cap_name + "(" + primaryColType.get(0) + " " + primaryColName.get(0));
+        sb.append("\tpublic " + cap_name + "PrimaryKey(" + primaryColType.get(0) + " " + primaryColName.get(0));
         for (int i = 1; i < primaryColName.size(); i++) {
             sb.append(", " + primaryColType.get(i) + " " + primaryColName.get(i));
         }
@@ -86,26 +88,28 @@ public class AmbienDomain {
             sb.append("\tpublic " + typename + " get" + camelname + "() {\n\t\treturn " + name + ";\n\t}\n\n");
 
             // Setter
-            sb.append("\tpublic " + typename + " set" + camelname + "(" + typename + " " + name + ") {\n\t\tthis." + name + " = " + name + ";\n\t}\n\n");
+            sb.append("\tpublic void set" + camelname + "(" + typename + " " + name + ") {\n\t\tthis." + name + " = " + name + ";\n\t}\n\n");
         }
 
 
         // toString
-        sb.append("\t@Override\n\tpublic String toString() {\n\t\treturn \"" + cap_name + "{\" + \n");
-        sb.append("\t\t\t\"" + primaryColName.get(0) + "='\" + " + primaryColName.get(0) + " + '\\'' +\n");
+        sb.append("\t@Override\n\tpublic String toString() {\n\t\treturn \"" + cap_name + "PrimaryKey{\" + \n");
+
+        sb.append("\t\t\t\"" + primaryColName.get(0) + "='\" + " + primaryColName.get(0) + " + \"'\" +\n");
         for (int i = 1; i < primaryColName.size(); i++) {
-            sb.append("\t\t\t\", " + primaryColName.get(i) + "='\" + " + primaryColName.get(i) + " + '\\'' +\n");
+            sb.append("\t\t\t\", " + primaryColName.get(i) + "='\" + " + primaryColName.get(i) + " + \"'\" +\n");
         }
-        sb.append("\t\t\t'}'\n\n");
+        sb.append("\t\t\t'}';\n");
+        sb.append("\t}\n\n");
 
 
         // equals
         sb.append("\t@Override\n\tpublic boolean equals(Object o) {\n");
         sb.append("\t\t if (this == o) return true;\n");
-        sb.append("\t\tif (!(o instanceof " + cap_name + ")) return false;\n\n");
-        sb.append("\t\t" + cap_name + " that = (" + cap_name + ") o;\n\n");
+        sb.append("\t\tif (!(o instanceof " + cap_name + "PrimaryKey)) return false;\n\n");
+        sb.append("\t\t" + cap_name + "PrimaryKey that = (" + cap_name + "PrimaryKey) o;\n\n");
         for (int i = 0; i < primaryColName.size(); i++) {
-            sb.append("\t\tif (!get" + Ambien.capName(primaryColName.get(i)) + "().equals(that.get" + Ambien.capName(primaryColName.get(1)) + "())) return false;\n");
+            sb.append("\t\tif (!get" + Ambien.capName(primaryColName.get(i)) + "().equals(that.get" + Ambien.capName(primaryColName.get(i)) + "())) return false;\n");
         }
         sb.append("\t\treturn true;\n\t}\n\n");
 
@@ -116,18 +120,13 @@ public class AmbienDomain {
             sb.append("\t\tresult = 31 * result + get" + Ambien.capName(primaryColName.get(i)) + "().hashCode();\n");
         }
         sb.append("\t\treturn result;\n\t}\n\n");
+
+        // Close class
         sb.append("}\n");
 
 
         // save file
-        String fname = output_dir
-                + File.separator + "src"
-                + File.separator + "main"
-                + File.separator + "java"
-                + File.separator + "hessian"
-                + File.separator + "ambien"
-                + File.separator + "domain"
-                + File.separator + cap_name + "PrimaryKey.java";
+        String fname = params.srcMainJavaHessianAmbienDomainDir + File.separator + cap_name + "PrimaryKey.java";
 
         return Ambien.writeFile(fname, sb.toString());
     }
@@ -143,15 +142,15 @@ public class AmbienDomain {
                 "import java.io.Serializable;\n" +
                 "\n" +
                 "@Table(value=\"" + name + "\")\n");
-        sb.append("public class " + cap_name + "implements Serializable {\n\n");
+        sb.append("public class " + cap_name + " implements Serializable {\n\n");
 
         // Primary Key
-        sb.append("\t@PrimaryKeyClass private" + cap_name + "PrimaryKey key;\n\n");
+        sb.append("\t@PrimaryKey private " + cap_name + "PrimaryKey key;\n\n");
 
         // Columns
         List<String> regularColType = new ArrayList<String>(regularCols.size());
         for (int i = 0; i < regularCols.size(); i++) {
-            regularColType.set(i, cr.codecFor(regularCols.get(i).getType()).getJavaType().getClass().getName());
+            regularColType.add(i, cr.codecFor(regularCols.get(i).getType()).getJavaType().getRawType().getName());
             sb.append("\t@Column(\"" + regularCols.get(i).getName() + "\") private " + regularColType.get(i) + " " + regularCols.get(i).getName() + ";\n\n");
         }
 
@@ -177,7 +176,7 @@ public class AmbienDomain {
             sb.append("\tpublic " + typename + " get" + camelname + "() {\n\t\treturn " + name + ";\n\t}\n\n");
 
             // Setter
-            sb.append("\tpublic " + typename + " set" + camelname + "(" + typename + " " + name + ") {\n\t\tthis." + name + " = " + name + ";\n\t}\n\n");
+            sb.append("\tpublic void set" + camelname + "(" + typename + " " + name + ") {\n\t\tthis." + name + " = " + name + ";\n\t}\n\n");
         }
         sb.append("\tpublic " + cap_name + "PrimaryKey getKey() {\n\t\treturn key;\n\t}\n\n");
         sb.append("\tpublic void setKey(" + cap_name + "PrimaryKey key) {\n\t\tthis.key = key;\n\t}\n\n");
@@ -186,23 +185,18 @@ public class AmbienDomain {
         // toString
         sb.append("\t@Override\n\tpublic String toString() {\n");
         sb.append("\t\treturn \"" + cap_name + "{\" +\n");
-        sb.append("\t\t\t\", " + regularCols.get(0).getName() + "='\" + " + regularCols.get(0).getName() + " + '\\'' +\n");
+        sb.append("\t\t\t\"key='\" + key + \"'\" +\n");
         for (int i = 0; i < regularCols.size(); i++) {
-            sb.append("\t\t\t\", " + regularCols.get(i).getName() + "='\" + " + regularCols.get(i).getName() + " + '\\'' +\n");
+            sb.append("\t\t\t\", " + regularCols.get(i).getName() + "='\" + " + regularCols.get(i).getName() + " + \"'\" +\n");
         }
-        sb.append("\t\t\t\'}\';\n\t}\n\n");
+        sb.append("\t\t\t\"}\";\n\t}\n\n");
+
+        // Close class
         sb.append("}\n");
 
 
         // save file
-        String fname = output_dir
-                + File.separator + "src"
-                + File.separator + "main"
-                + File.separator + "java"
-                + File.separator + "hessian"
-                + File.separator + "ambien"
-                + File.separator + "domain"
-                + File.separator + cap_name + ".java";
+        String fname = params.srcMainJavaHessianAmbienDomainDir + File.separator + cap_name + ".java";
 
         return Ambien.writeFile(fname, sb.toString());
     }

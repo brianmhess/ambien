@@ -1,54 +1,41 @@
 package hessian.ambien;
 
+import com.google.common.io.Files;
+
 import java.io.*;
 
 public class AmbienBoilerplate {
-    String host = null;
-    String keyspace = null;
-    String output_dir = null;
-    String srcDir = null;
-    String srcMainDir = null;
-    String srcMainJavaDir = null;
-    String srcMainJavaHessianDir = null;
-    String srcMainJavaHessianAmbienDir = null;
-    String srcMainJavaHessianAmbienDomainDir = null;
-    String srcMainJavaHessianAmbienRepositoryDir = null;
-    String srcMainJavaHessianAmbienControllerDir = null;
-    String srcMainResourcesDir = null;
-    String srcMainResourcesStaticDir = null;
-    String srcMainResourcesTemplateDir = null;
+    private AmbienParams params = null;
+    private String host = null;
+    private String keyspace = null;
+    private String output_dir = null;
 
-    public AmbienBoilerplate(String output_dir, String host, String keyspace) {
-        this.host = host;
-        this.keyspace = keyspace;
-        this.output_dir = output_dir;
-        this.srcDir = output_dir + File.separator + "src";
-        this.srcMainDir = srcDir + File.separator + "main";
-        this.srcMainJavaDir = srcMainDir + File.separator + "java";
-        this.srcMainJavaHessianDir = srcMainJavaDir + File.separator + "hessian";
-        this.srcMainJavaHessianAmbienDir = srcMainJavaHessianDir + File.separator + "ambien";
-        this.srcMainJavaHessianAmbienDomainDir = srcMainJavaHessianAmbienDir + File.separator + "domain";
-        this.srcMainJavaHessianAmbienRepositoryDir = srcMainJavaHessianAmbienDir + File.separator + "repository";
-        this.srcMainJavaHessianAmbienControllerDir = srcMainJavaHessianAmbienDir + File.separator + "contoller";
-        this.srcMainResourcesDir = srcMainDir + File.separator + "resources";
-        this.srcMainResourcesStaticDir = srcMainResourcesDir + File.separator + "static";
-        this.srcMainResourcesTemplateDir = srcMainResourcesDir + File.separator + "template";
+    public AmbienBoilerplate(AmbienParams params) {
+        this.params = params;
+        this.host = params.host;
+        this.keyspace = params.keyspace_name;
+        this.output_dir = params.output_dir;
     }
 
     public boolean produceBoilerplate() {
         if (!makeDirectoryStructure()) return false;
         if (!makePomXml()) return false;
         if (!makeApplicationProperties()) return false;
+        if (!makeApplication()) return false;
+        if (!makeConfiguration()) return false;
+        if (!addKeystore()) return false;
+        if (!addTruststore()) return false;
 
         return true;
     }
 
     public  boolean makeDirectoryStructure() {
-        if (!createDirectory(srcMainJavaHessianAmbienDomainDir)) return false;
-        if (!createDirectory(srcMainJavaHessianAmbienRepositoryDir)) return false;
-        if (!createDirectory(srcMainJavaHessianAmbienControllerDir)) return false;
-        if (!createDirectory(srcMainResourcesStaticDir)) return false;
-        if (!createDirectory(srcMainResourcesTemplateDir)) return false;
+        if (!createDirectory(params.srcMainJavaHessianAmbienDomainDir)) return false;
+        if (!createDirectory(params.srcMainJavaHessianAmbienRepositoryDir)) return false;
+        if (!createDirectory(params.srcMainJavaHessianAmbienControllerDir)) return false;
+        if (!createDirectory(params.srcMainResourcesDir)) return false;
+        //if (!createDirectory(params.srcMainResourcesStaticDir)) return false;
+        //if (!createDirectory(params.srcMainResourcesTemplateDir)) return false;
 
         return true;
     }
@@ -183,9 +170,20 @@ public class AmbienBoilerplate {
                 "spring.application.name=Ambien\n" +
                 "server.port=8222\n" +
                 "\n" +
-                "springdata.basepackage=hessian.ambien.domain;";
+                "springdata.basepackage=hessian.ambien.domain;\n" +
+                "management.endpoints.web.exposure.include=*\n" +
+                "management.endpoint.health.show-details=always\n\n";
+        if ((null != params.keystorePwd) || (null != params.truststorePwd)) {
+            contents = contents + "\n# DSE Security parameters\n";
+            if (null != params.keystorePwd) {
+                contents = contents + "dse.keystorePwd=" + params.keystorePwd + "\n";
+            }
+            if (null != params.truststorePwd) {
+                contents = contents + "dse.truststorePwd=" + params.truststorePwd + "\n";
+            }
+        }
 
-        return Ambien.writeFile(srcMainResourcesDir + File.separator + "application.properties", contents);
+        return Ambien.writeFile(params.srcMainResourcesDir + File.separator + "application.properties", contents);
     }
 
     public boolean makeApplication() {
@@ -208,7 +206,7 @@ public class AmbienBoilerplate {
                 "\t}\n" +
                 "}\n";
 
-        return Ambien.writeFile(srcMainJavaHessianAmbienDir + File.separator + "AmbienApplication.java", contents);
+        return Ambien.writeFile(params.srcMainJavaHessianAmbienDir + File.separator + "AmbienApplication.java", contents);
     }
 
     public boolean makeConfiguration() {
@@ -250,6 +248,31 @@ public class AmbienBoilerplate {
                 "\n" +
                 "}\n";
 
-        return Ambien.writeFile(srcMainJavaHessianAmbienDir + File.separator + "AmbienConfiguration.java", contents);
+        return Ambien.writeFile(params.srcMainJavaHessianAmbienDir + File.separator + "AmbienConfiguration.java", contents);
     }
+
+    boolean addKeystore() {
+        if (null == params.keystorePath) return true;
+        try {
+            Files.copy(new File(params.keystorePath), new File(params.srcMainResourcesDir + File.separator + "keystore"));
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+    boolean addTruststore() {
+        if (null == params.truststorePath) return true;
+        try {
+            Files.copy(new File(params.truststorePath), new File(params.srcMainResourcesDir + File.separator + "truststore"));
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
 }
