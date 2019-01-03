@@ -26,7 +26,7 @@ public class AmbienParams {
     public String srcMainJavaHessianAmbienControllerDir = null;
     public String srcMainResourcesDir = null;
     public String srcMainResourcesStaticDir = null;
-    public String srcMainResourcesTemplateDir = null;
+    public String srcMainResourcesTemplatesDir = null;
 
     public static String usage() {
         StringBuilder usage = new StringBuilder();
@@ -124,8 +124,8 @@ public class AmbienParams {
         if (null != (tkey = amap.remove("-ssl-truststore-pw")))  truststorePwd =  tkey;
         if (null != (tkey = amap.remove("-ssl-keystore-path")))   keystorePath = tkey;
         if (null != (tkey = amap.remove("-ssl-keystore-pw")))    keystorePwd = tkey;
-        if (null != (tkey = amap.remove(("-t"))))               table_name = tkey;
-        if (null != (tkey = amap.remove(("-k"))))               keyspace_name = tkey;
+        if (null != (tkey = amap.remove("-t")))               table_name = tkey;
+        if (null != (tkey = amap.remove("-k")))               keyspace_name = tkey;
         if (null != (tkey = amap.remove(("-o")))) {
             if (tkey.endsWith("\\"))
                 tkey.substring(0, tkey.length()-1);
@@ -148,7 +148,7 @@ public class AmbienParams {
         srcMainJavaHessianAmbienControllerDir = srcMainJavaHessianAmbienDir + File.separator + "contoller";
         srcMainResourcesDir = srcMainDir + File.separator + "resources";
         srcMainResourcesStaticDir = srcMainResourcesDir + File.separator + "static";
-        srcMainResourcesTemplateDir = srcMainResourcesDir + File.separator + "template";
+        srcMainResourcesTemplatesDir = srcMainResourcesDir + File.separator + "templates";
     }
 
 }

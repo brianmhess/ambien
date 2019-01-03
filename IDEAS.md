@@ -9,7 +9,6 @@
 ## Additional Queries
 1. Partition keys + regular column with ALLOW FILTERING
 2. Partition keys + clustering column(s) + regular column with ALLOW FILTERING
-3. Partition keys + clustering column(s) with inequality (lt, lte, gt, gte) with ALLOW FILTERING
 4. Partition keys + clustering column(s) with inequality (between) with ALLOW FILTERING
 5. Partition keys + clustering columns with multiple inequalities
 6. Clustering column(s) without parttion key(s) - equality and inequality

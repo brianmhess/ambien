@@ -10,16 +10,19 @@ public class AmbienController {
     private AmbienParams params = null;
     private String name = null;
     private CodecRegistry cr = null;
-    private List<ColumnMetadata> partitionCols = null;
-    private List<ColumnMetadata> clusteringCols = null;
-    private List<ColumnMetadata> regularCols = null;
+    private List<ColumnMetadata> partitionCols;
+    private List<ColumnMetadata> clusteringCols;
+    private List<ColumnMetadata> regularCols;
+    private List<String> bases;
 
-    public AmbienController(AmbienParams params, List<ColumnMetadata> partitionCols, List<ColumnMetadata> clusteringCols, List<ColumnMetadata> regularCols, CodecRegistry cr) {
+    public AmbienController(AmbienParams params, List<ColumnMetadata> partitionCols, List<ColumnMetadata> clusteringCols,
+                            List<ColumnMetadata> regularCols, CodecRegistry cr, List<String> bases) {
         this.params = params;
         this.name = params.table_name;
         this.partitionCols = partitionCols;
         this.clusteringCols = clusteringCols;
         this.regularCols = regularCols;
+        this.bases = bases;
         this.cr = cr;
     }
 
