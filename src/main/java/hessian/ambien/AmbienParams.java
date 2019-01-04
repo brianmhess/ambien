@@ -26,7 +26,7 @@ public class AmbienParams {
     public String srcMainJavaHessianAmbienControllerDir = null;
     public String srcMainResourcesDir = null;
     public String srcMainResourcesStaticDir = null;
-    public String srcMainResourcesTemplateDir = null;
+    public String srcMainResourcesTemplatesDir = null;
 
     public static String usage() {
         StringBuilder usage = new StringBuilder();
@@ -46,7 +46,7 @@ public class AmbienParams {
         return usage.toString();
     }
 
-    public boolean validateArgs() {
+    private boolean validateArgs() {
         if (null == host) {
             System.err.println("No host provided.");
             return false;
@@ -69,8 +69,8 @@ public class AmbienParams {
         return true;
     }
 
-    public boolean processConfigFile(String fname, Map<String, String> amap)
-            throws IOException, FileNotFoundException {
+    private boolean processConfigFile(String fname, Map<String, String> amap)
+            throws IOException {
         File cFile = new File(fname);
         if (!cFile.isFile()) {
             System.err.println("Configuration File must be a file");
@@ -93,7 +93,7 @@ public class AmbienParams {
     }
 
     public boolean parseArgs(String[] args)
-            throws IOException, FileNotFoundException {
+            throws IOException {
         String tkey;
         if (args.length == 0) {
             System.err.println("No arguments specified");
@@ -124,11 +124,11 @@ public class AmbienParams {
         if (null != (tkey = amap.remove("-ssl-truststore-pw")))  truststorePwd =  tkey;
         if (null != (tkey = amap.remove("-ssl-keystore-path")))   keystorePath = tkey;
         if (null != (tkey = amap.remove("-ssl-keystore-pw")))    keystorePwd = tkey;
-        if (null != (tkey = amap.remove(("-t"))))               table_name = tkey;
-        if (null != (tkey = amap.remove(("-k"))))               keyspace_name = tkey;
+        if (null != (tkey = amap.remove("-t")))               table_name = tkey;
+        if (null != (tkey = amap.remove("-k")))               keyspace_name = tkey;
         if (null != (tkey = amap.remove(("-o")))) {
             if (tkey.endsWith("\\"))
-                tkey.substring(0, tkey.length()-1);
+                tkey = tkey.substring(0, tkey.length()-1);
             output_dir = tkey;
             setPaths();
         }
@@ -137,7 +137,7 @@ public class AmbienParams {
         return validateArgs();
     }
 
-    void setPaths() {
+    private void setPaths() {
         srcDir = output_dir + File.separator + "src";
         srcMainDir = srcDir + File.separator + "main";
         srcMainJavaDir = srcMainDir + File.separator + "java";
@@ -148,7 +148,7 @@ public class AmbienParams {
         srcMainJavaHessianAmbienControllerDir = srcMainJavaHessianAmbienDir + File.separator + "contoller";
         srcMainResourcesDir = srcMainDir + File.separator + "resources";
         srcMainResourcesStaticDir = srcMainResourcesDir + File.separator + "static";
-        srcMainResourcesTemplateDir = srcMainResourcesDir + File.separator + "template";
+        srcMainResourcesTemplatesDir = srcMainResourcesDir + File.separator + "templates";
     }
 
 }

@@ -26,27 +26,10 @@ import javax.net.ssl.TrustManagerFactory;
 import java.io.*;
 import java.security.*;
 import java.security.cert.CertificateException;
-import java.text.ParseException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 public class Ambien {
     private String version = "0.0.1";
-    /*
-    private String host = null;
-    private int port = 9042;
-    private String username = null;
-    private String password = null;
-    private String truststorePath = null;
-    private String truststorePwd = null;
-    private String keystorePath = null;
-    private String keystorePwd = null;
-    private String table_name = null;
-    private String keyspace_name = null;
-    private String output_dir = null;
-    */
     private AmbienParams params = new AmbienParams();
 
     private Cluster cluster = null;
@@ -66,16 +49,18 @@ public class Ambien {
         throws KeyStoreException, FileNotFoundException, IOException, NoSuchAlgorithmException,
             KeyManagementException, CertificateException, UnrecoverableKeyException {
         TrustManagerFactory tmf = null;
-        KeyStore tks = KeyStore.getInstance("JKS");
-        tks.load((InputStream) new FileInputStream(new File(params.truststorePath)),
-                params.truststorePwd.toCharArray());
-        tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        tmf.init(tks);
+        if (null != params.truststorePath) {
+            KeyStore tks = KeyStore.getInstance("JKS");
+            tks.load(new FileInputStream(new File(params.truststorePath)),
+                    params.truststorePwd.toCharArray());
+            tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(tks);
+        }
 
         KeyManagerFactory kmf = null;
         if (null != params.keystorePath) {
             KeyStore kks = KeyStore.getInstance("JKS");
-            kks.load((InputStream) new FileInputStream(new File(params.keystorePath)),
+            kks.load(new FileInputStream(new File(params.keystorePath)),
                     params.keystorePwd.toCharArray());
             kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             kmf.init(kks, params.keystorePwd.toCharArray());
@@ -109,6 +94,11 @@ public class Ambien {
         session = cluster.connect();
     }
 
+    private boolean cleanup(boolean retval) {
+        cleanup();
+        return retval;
+    }
+
     private void cleanup() {
         if (null != session)
             session.close();
@@ -116,11 +106,10 @@ public class Ambien {
             cluster.close();
     }
     
-    public boolean run(String[] args) 
-        throws IOException, ParseException, InterruptedException, ExecutionException,
-               KeyStoreException, NoSuchAlgorithmException, KeyManagementException,
+    private boolean run(String[] args)
+        throws IOException, KeyStoreException, NoSuchAlgorithmException, KeyManagementException,
                CertificateException, UnrecoverableKeyException {
-        if (false == params.parseArgs(args)) {
+        if (!params.parseArgs(args)) {
             System.err.println("Bad arguments");
             System.err.println(usage());
             return false;
@@ -131,11 +120,11 @@ public class Ambien {
         File outFile = new File(params.output_dir);
         if (!outFile.isDirectory()) {
             System.err.println("Output directory must be a directory");
-            return false;
+            return cleanup(false);
         }
         if (!outFile.exists()) {
             System.err.println("Output directory does not exist");
-            return false;
+            return cleanup(false);
         }
 
         // Get Metadata for Table
@@ -143,12 +132,12 @@ public class Ambien {
         KeyspaceMetadata km = m.getKeyspace(params.keyspace_name);
         if (null == km) {
             System.err.println("Keyspace " + params.keyspace_name + " not found");
-            return false;
+            return cleanup(false);
         }
         TableMetadata tm = km.getTable(params.table_name);
         if (null == tm) {
             System.err.println("Table " + params.table_name + " not found");
-            return false;
+            return cleanup(false);
         }
         List<ColumnMetadata> clusteringCols = tm.getClusteringColumns();
         List<ColumnMetadata> partitionCols = tm.getPartitionKey();
@@ -159,26 +148,28 @@ public class Ambien {
 
         // Produce Boilerplate (pom.xml, etc)
         AmbienBoilerplate ab = new AmbienBoilerplate(params);
-        if (!ab.produceBoilerplate()) return false;
+        if (!ab.produceBoilerplate()) {
+            return cleanup(false);
+        }
 
         // Produce Domain Classes
         AmbienDomain ad = new AmbienDomain(params, partitionCols, clusteringCols, regularCols, cr);
-        if(!ad.produceDomainClasses()) return false;
+        if(!ad.produceDomainClasses()) {
+            return cleanup(false);
+        }
 
         // Produce Repository Classes
         AmbienRepository ar = new AmbienRepository(params, partitionCols, clusteringCols, regularCols, cr);
-        if(!ar.produceRepositoryClasses()) return false;
+        if(!ar.produceRepositoryClasses()) {
+            return cleanup(false);
+        }
 
-        // Produce Controller Classes
-        AmbienController ac = new AmbienController(params, partitionCols, clusteringCols, regularCols, cr);
-        if(!ac.produceControllerClasses()) return false;
-
+        cleanup();
         return true;
     }
 
     public static void main(String[] args) 
-        throws IOException, ParseException, InterruptedException, ExecutionException,
-               KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException,
+        throws IOException, KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException,
                CertificateException, KeyManagementException {
         Ambien a = new Ambien();
         boolean success = a.run(args);
@@ -195,7 +186,7 @@ public class Ambien {
         File tfile = new File(path);
         if (tfile.exists()) return false;
         try {
-            tfile.createNewFile();
+            if (!tfile.createNewFile()) return false;
         } catch (IOException e) {
             System.err.println("Could not create file (" + path + ")");
             return false;
@@ -215,7 +206,5 @@ public class Ambien {
     public static String capName(String s) {
         return s.substring(0,1).toUpperCase() + s.substring(1);
     }
-
-
 }
 

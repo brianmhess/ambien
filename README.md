@@ -37,22 +37,48 @@ And then start the service with:
 `java -jar target/ambien-0.0.1-SNAPSHOT.jar`
 
 ## Current API calls
+There is an index.html page which lists all the generated REST endpoints:
+``` 
+http://hostname:8222/
+```
 Print Hello World:
 ```
 http://hostname:8222/api/hello
 ```
 Select all rows:
 ```
-http://hostname:8222/api/
+http://hostname:8222/api/all
+```
+Select some rows:
+``` 
+http://hostname:8222/api/some/{some}
 ```
 Select by partition keys
 ```
-http://hostname:8222/api/<partitionKey1>/<partitionKey2>/.../<partitionKeyN>
+http://hostname:8222/api/<partitionKey1>_<partitionKey2>_..._<partitionKeyN>/{partitionKey1}/{partitionKey2}/.../{partitionKeyN}
 ```
 Select by partition keys and clustering key(s)
 ```
-http://hostname:8222/api/<partitionKey1>/<partitionKey2>/.../<partitionKeyN>
-http://hostname:8222/api/<partitionKey1>/<partitionKey2>/.../<partitionKeyN>/<clustering1>/
-http://hostname:8222/api/<partitionKey1>/<partitionKey2>/.../<partitionKeyN>/<clustering1>/<clustering2>/
-http://hostname:8222/api/<partitionKey1>/<partitionKey2>/.../<partitionKeyN>/<clustering1>/<clustering2>/.../<clusteringM>/
+http://hostname:8222/api/<pkey1>_<ccol1>/{pkey1}/{ccol1}
+http://hostname:8222/api/<pkey1>_<ccol1>_<ccol2>/{pkey1}/{ccol1}/{ccol2}
+...
+```
+Select by partition key and inequality on clustering key(s)
+```
+http://hostname:8222/api/<pkey1>_<ccol1>_lt/{pkey1}/{ccol1}
+http://hostname:8222/api/<pkey1>_<ccol1>_gt/{pkey1}/{ccol1}
+http://hostname:8222/api/<pkey1>_<ccol1>_lte/{pkey1}/{ccol1}
+http://hostname:8222/api/<pkey1>_<ccol1>_gte/{pkey1}/{ccol1}
+
+http://hostname:8222/api/<pkey1>_<ccol1>_<ccol2>_lt/{pkey1}/{ccol1}/{ccol2}
+http://hostname:8222/api/<pkey1>_<ccol1>_<ccol2>_gt/{pkey1}/{ccol1}/{ccol2}
+http://hostname:8222/api/<pkey1>_<ccol1>_<ccol2>_lte/{pkey1}/{ccol1}/{ccol2}
+http://hostname:8222/api/<pkey1>_<ccol1>_<ccol2>_gte/{pkey1}/{ccol1}/{ccol2}
+...
+```
+
+## Spring Actuator
+You can also access various metrics from the Actuator endpoints:
+``` 
+http://hostname:8222/actuator
 ```

@@ -1,20 +1,23 @@
 package hessian.ambien;
 
-import com.google.common.io.Files;
-
 import java.io.*;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.Files;
 
 public class AmbienBoilerplate {
     private AmbienParams params = null;
     private String host = null;
     private String keyspace = null;
     private String output_dir = null;
+    private String hessianTypeparserDir = null;
 
     public AmbienBoilerplate(AmbienParams params) {
         this.params = params;
         this.host = params.host;
         this.keyspace = params.keyspace_name;
         this.output_dir = params.output_dir;
+        this.hessianTypeparserDir = params.output_dir + File.separator + "repo" + File.separator + "hessian" + File.separator + "typeparser" + File.separator + "0.1";
     }
 
     public boolean produceBoilerplate() {
@@ -25,22 +28,24 @@ public class AmbienBoilerplate {
         if (!makeConfiguration()) return false;
         if (!addKeystore()) return false;
         if (!addTruststore()) return false;
+        if (!copyResources()) return false;
 
         return true;
     }
 
-    public  boolean makeDirectoryStructure() {
+    private   boolean makeDirectoryStructure() {
         if (!createDirectory(params.srcMainJavaHessianAmbienDomainDir)) return false;
+        if (!createDirectory(hessianTypeparserDir)) return false;
         if (!createDirectory(params.srcMainJavaHessianAmbienRepositoryDir)) return false;
         if (!createDirectory(params.srcMainJavaHessianAmbienControllerDir)) return false;
         if (!createDirectory(params.srcMainResourcesDir)) return false;
         //if (!createDirectory(params.srcMainResourcesStaticDir)) return false;
-        //if (!createDirectory(params.srcMainResourcesTemplateDir)) return false;
+        if (!createDirectory(params.srcMainResourcesTemplatesDir)) return false;
 
         return true;
     }
 
-    public boolean createDirectory(String dir) {
+    private boolean createDirectory(String dir) {
         File tfile = new File(dir);
         if (tfile.exists()) {
             if (tfile.isDirectory())
@@ -50,7 +55,7 @@ public class AmbienBoilerplate {
         return tfile.mkdirs();
     }
 
-    public boolean makePomXml() {
+    private boolean makePomXml() {
         String contents = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<project xmlns=\"http://maven.apache.org/POM/4.0.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
                 "\txsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\">\n" +
@@ -80,6 +85,14 @@ public class AmbienBoilerplate {
                 "\t\t<java.version>1.8</java.version>\n" +
                 "\t\t<spring-data.version>2.0.7.RELEASE</spring-data.version>\n" +
                 "\t</properties>\n" +
+                "\n" +
+                "\t<repositories>\n" +
+                "\t\t<repository>\n" +
+                "\t\t\t<id>data-local</id>\n" +
+                "\t\t\t<name>data</name>\n" +
+                "\t\t\t<url>file://${project.basedir}/repo</url>\n" +
+                "\t\t</repository>\n" +
+                "\t</repositories>\n" +
                 "\n" +
                 "\t<dependencies>\n" +
                 "\t\t<!-- DSE -->\n" +
@@ -125,21 +138,15 @@ public class AmbienBoilerplate {
                 "\t\t<!-- Spring Data, extras -->\n" +
                 "\t\t<dependency>\n" +
                 "\t\t\t<groupId>org.springframework.data</groupId>\n" +
-                "\t\t\t<artifactId>spring-data-cassandra</artifactId>\n" +
-                "\t\t\t<version>${spring-data.version}</version>\n" +
-                "\t\t\t<exclusions>\n" +
-                "\t\t\t\t<exclusion>\n" +
-                "\t\t\t\t\t<groupId>com.datastax.cassandra</groupId>\n" +
-                "\t\t\t\t\t<artifactId>cassandra-driver-core</artifactId>\n" +
-                "\t\t\t\t</exclusion>\n" +
-                "\t\t\t</exclusions>\n" +
-                "\t\t</dependency>\n" +
-                "\t\t<dependency>\n" +
-                "\t\t\t<groupId>org.springframework.data</groupId>\n" +
                 "\t\t\t<artifactId>spring-data-commons</artifactId>\n" +
                 "\t\t\t<version>${spring-data.version}</version>\n" +
                 "\t\t</dependency>\n" +
                 "\n" +
+                "\t\t<dependency>\n" +
+                "\t\t\t<groupId>hessian</groupId>\n" +
+                "\t\t\t<artifactId>typeparser</artifactId>\n" +
+                "\t\t\t<version>0.1</version>\n" +
+                "\t\t</dependency>\n" +
                 "\t</dependencies>\n" +
                 "\n" +
                 "\t<build>\n" +
@@ -156,13 +163,17 @@ public class AmbienBoilerplate {
         return Ambien.writeFile(output_dir + File.separator + "pom.xml", contents);
     }
 
-    public boolean makeApplicationProperties() {
+    private boolean makeApplicationProperties() {
         String contents = "# ------------------------------\n" +
                 "# DataStax Enterprise parameters\n" +
                 "# ------------------------------\n" +
                 "dse.contactPoints=" + host + "\n" +
                 "dse.port=9042\n" +
                 "dse.keyspace=" + keyspace + "\n" +
+                ((null == params.username) ? "" : "dse.username=" + params.username + "\n") +
+                ((null == params.password) ? "" : "dse.password=" + params.password + "\n") +
+                ((null == params.truststorePwd) ? "" : "dse.truststorePwd=" + params.truststorePwd + "\n") +
+                ((null == params.keystorePwd) ? "" : "dse.keystorePwd=" + params.keystorePwd + "\n") +
                 "\n" +
                 "# ----------------------\n" +
                 "# Spring Boot parameters\n" +
@@ -186,7 +197,7 @@ public class AmbienBoilerplate {
         return Ambien.writeFile(params.srcMainResourcesDir + File.separator + "application.properties", contents);
     }
 
-    public boolean makeApplication() {
+    private boolean makeApplication() {
         String contents = "package hessian.ambien;\n" +
                 "\n" +
                 "import org.springframework.boot.SpringApplication;\n" +
@@ -209,19 +220,26 @@ public class AmbienBoilerplate {
         return Ambien.writeFile(params.srcMainJavaHessianAmbienDir + File.separator + "AmbienApplication.java", contents);
     }
 
-    public boolean makeConfiguration() {
+    private boolean makeConfiguration() {
         String contents = "package hessian.ambien;\n" +
                 "\n" +
                 "import org.springframework.beans.factory.annotation.Value;\n" +
                 "import org.springframework.context.annotation.Bean;\n" +
                 "import org.springframework.context.annotation.Configuration;\n" +
                 "import org.springframework.data.cassandra.config.AbstractCassandraConfiguration;\n" +
-                "import org.springframework.data.cassandra.config.CassandraClusterFactoryBean;\n" +
-                "import org.springframework.data.cassandra.core.mapping.BasicCassandraMappingContext;\n" +
-                "import org.springframework.data.cassandra.core.mapping.CassandraMappingContext;\n" +
                 "\n" +
-                "import javax.validation.constraints.NotNull;\n" +
+                "import javax.net.ssl.KeyManagerFactory;\n" +
+                "import javax.net.ssl.SSLContext;\n" +
+                "import javax.net.ssl.TrustManagerFactory;\n" +
+                "import java.io.*;\n" +
+                "import java.security.*;\n" +
+                "import java.security.cert.CertificateException;\n" +
                 "\n" +
+                "import com.datastax.driver.core.*;\n" +
+                "import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;\n" +
+                "import com.datastax.driver.core.policies.TokenAwarePolicy;\n" +
+                "import com.datastax.driver.dse.*;\n" +
+                "import com.datastax.driver.mapping.*;\n" +
                 "\n" +
                 "@Configuration\n" +
                 "public class AmbienConfiguration extends AbstractCassandraConfiguration {\n" +
@@ -246,15 +264,76 @@ public class AmbienBoilerplate {
                 "        return port;\n" +
                 "    }\n" +
                 "\n" +
+                ((null == params.truststorePath) ? "" : "    public String truststorePath = " + params.srcMainResourcesDir + File.separator + "truststore" + ";\n\n") +
+                ((null == params.keystorePath) ? "" : "    public String keystorePath = " + params.srcMainResourcesDir + File.separator + "keystore" + ";\n\n") +
+                ((null == params.username) ? "" : "    @Value(\"${dse.username}\")\n    public String username;\n\n") +
+                ((null == params.password) ? "" : "    @Value(\"${dse.password}\")\n    public String password;\n\n") +
+                ((null == params.truststorePwd) ? "" : "    @Value(\"${dse.truststorePwd}\")\n    public String truststorePwd;\n\n") +
+                ((null == params.keystorePwd) ? "" : "    @Value(\"${dse.keystorePwd}\")\n    public String keystorePwd;\n\n") +
+                "    private SSLOptions createSSLOptions(String truststorePath, String truststorePwd, String keystorePath, String keystorePwd)\n" +
+                "        throws KeyStoreException, FileNotFoundException, IOException, NoSuchAlgorithmException,\n" +
+                "            KeyManagementException, CertificateException, UnrecoverableKeyException {\n" +
+                "        TrustManagerFactory tmf = null;\n" +
+                "        if (null != truststorePath) {\n" +
+                "            KeyStore tks = KeyStore.getInstance(\"JKS\");\n" +
+                "            tks.load(new FileInputStream(new File(truststorePath)),\n" +
+                "                     truststorePwd.toCharArray());\n" +
+                "            tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());\n" +
+                "            tmf.init(tks);\n" +
+                "        }\n" +
+                "\n" +
+                "        KeyManagerFactory kmf = null;\n" +
+                "        if (null != keystorePath) {\n" +
+                "            KeyStore kks = KeyStore.getInstance(\"JKS\");\n" +
+                "            kks.load(new FileInputStream(new File(keystorePath)),\n" +
+                "                     keystorePwd.toCharArray());\n" +
+                "            kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());\n" +
+                "            kmf.init(kks, keystorePwd.toCharArray());\n" +
+                "        }\n" +
+                "\n" +
+                "        SSLContext sslContext = SSLContext.getInstance(\"TLS\");\n" +
+                "        sslContext.init(kmf != null? kmf.getKeyManagers() : null,\n" +
+                "                        tmf != null ? tmf.getTrustManagers() : null,\n" +
+                "                        new SecureRandom());\n" +
+                "\n" +
+                "        return RemoteEndpointAwareJdkSSLOptions.builder().withSSLContext(sslContext).build();\n" +
+                "    }\n" +
+                "\n" +
+                "    @Bean\n" +
+                "    public DseCluster dseCluster() {\n" +
+                "        DseCluster.Builder dseClusterBuilder =\n" +
+                "                DseCluster.builder()\n" +
+                "                        .addContactPoints(contactPoints)\n" +
+                "                        .withPort(port)\n" +
+                "                        .withLoadBalancingPolicy(new TokenAwarePolicy( DCAwareRoundRobinPolicy.builder().build() ) );\n" +
+                ((null == params.username) ?  "" : "        if (null != username)\n" +
+                "            clusterBuilder = clusterBuilder.withCredentials(username, password);\n") +
+                ((null == params.truststorePwd) ?  "" : "        if (null != truststorePath)\n" +
+                "            clusterBuilder = clusterBuilder.withSSL(createSSLOptions(truststorePath, truststorePwd, keystorePath, keystorePwd));\n") +
+                "        return dseClusterBuilder.build();\n" +
+                "    }\n" +
+                "\n" +
+                "    @Bean\n" +
+                "    public DseSession dseSession(DseCluster dseCluster) {\n" +
+                "\n" +
+                "        return dseCluster.connect(keyspace);\n" +
+                "    }\n" +
+                "\n" +
+                "\n" +
+                "    @Bean\n" +
+                "    public MappingManager mappingManager(DseSession dseSession) {\n" +
+                "\n" +
+                "        return new MappingManager(dseSession);\n" +
+                "    }"+
                 "}\n";
 
         return Ambien.writeFile(params.srcMainJavaHessianAmbienDir + File.separator + "AmbienConfiguration.java", contents);
     }
 
-    boolean addKeystore() {
+    private boolean addKeystore() {
         if (null == params.keystorePath) return true;
         try {
-            Files.copy(new File(params.keystorePath), new File(params.srcMainResourcesDir + File.separator + "keystore"));
+            Files.copy(Paths.get(params.keystorePath), Paths.get(params.srcMainResourcesDir + File.separator + "keystore"));
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -263,15 +342,28 @@ public class AmbienBoilerplate {
         return true;
     }
 
-    boolean addTruststore() {
+    private boolean addTruststore() {
         if (null == params.truststorePath) return true;
         try {
-            Files.copy(new File(params.truststorePath), new File(params.srcMainResourcesDir + File.separator + "truststore"));
+            Files.copy(Paths.get(params.truststorePath), Paths.get(params.srcMainResourcesDir + File.separator + "truststore"));
         }
         catch (Exception e) {
             e.printStackTrace();
             return false;
         }
+        return true;
+    }
+
+    private boolean copyResources() {
+        InputStream is = this.getClass().getResourceAsStream("/typeparser-0.1.jar");
+        try {
+            Files.copy(is, Paths.get(hessianTypeparserDir + File.separator + "typeparser-0.1.jar"), StandardCopyOption.REPLACE_EXISTING);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
         return true;
     }
 
