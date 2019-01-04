@@ -33,7 +33,7 @@ public class AmbienBoilerplate {
         return true;
     }
 
-    public  boolean makeDirectoryStructure() {
+    private   boolean makeDirectoryStructure() {
         if (!createDirectory(params.srcMainJavaHessianAmbienDomainDir)) return false;
         if (!createDirectory(hessianTypeparserDir)) return false;
         if (!createDirectory(params.srcMainJavaHessianAmbienRepositoryDir)) return false;
@@ -45,7 +45,7 @@ public class AmbienBoilerplate {
         return true;
     }
 
-    public boolean createDirectory(String dir) {
+    private boolean createDirectory(String dir) {
         File tfile = new File(dir);
         if (tfile.exists()) {
             if (tfile.isDirectory())
@@ -55,7 +55,7 @@ public class AmbienBoilerplate {
         return tfile.mkdirs();
     }
 
-    public boolean makePomXml() {
+    private boolean makePomXml() {
         String contents = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<project xmlns=\"http://maven.apache.org/POM/4.0.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
                 "\txsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\">\n" +
@@ -163,7 +163,7 @@ public class AmbienBoilerplate {
         return Ambien.writeFile(output_dir + File.separator + "pom.xml", contents);
     }
 
-    public boolean makeApplicationProperties() {
+    private boolean makeApplicationProperties() {
         String contents = "# ------------------------------\n" +
                 "# DataStax Enterprise parameters\n" +
                 "# ------------------------------\n" +
@@ -197,7 +197,7 @@ public class AmbienBoilerplate {
         return Ambien.writeFile(params.srcMainResourcesDir + File.separator + "application.properties", contents);
     }
 
-    public boolean makeApplication() {
+    private boolean makeApplication() {
         String contents = "package hessian.ambien;\n" +
                 "\n" +
                 "import org.springframework.boot.SpringApplication;\n" +
@@ -220,7 +220,7 @@ public class AmbienBoilerplate {
         return Ambien.writeFile(params.srcMainJavaHessianAmbienDir + File.separator + "AmbienApplication.java", contents);
     }
 
-    public boolean makeConfiguration() {
+    private boolean makeConfiguration() {
         String contents = "package hessian.ambien;\n" +
                 "\n" +
                 "import org.springframework.beans.factory.annotation.Value;\n" +
@@ -330,7 +330,7 @@ public class AmbienBoilerplate {
         return Ambien.writeFile(params.srcMainJavaHessianAmbienDir + File.separator + "AmbienConfiguration.java", contents);
     }
 
-    boolean addKeystore() {
+    private boolean addKeystore() {
         if (null == params.keystorePath) return true;
         try {
             Files.copy(Paths.get(params.keystorePath), Paths.get(params.srcMainResourcesDir + File.separator + "keystore"));
@@ -342,7 +342,7 @@ public class AmbienBoilerplate {
         return true;
     }
 
-    boolean addTruststore() {
+    private boolean addTruststore() {
         if (null == params.truststorePath) return true;
         try {
             Files.copy(Paths.get(params.truststorePath), Paths.get(params.srcMainResourcesDir + File.separator + "truststore"));
@@ -354,7 +354,7 @@ public class AmbienBoilerplate {
         return true;
     }
 
-    boolean copyResources() {
+    private boolean copyResources() {
         InputStream is = this.getClass().getResourceAsStream("/typeparser-0.1.jar");
         try {
             Files.copy(is, Paths.get(hessianTypeparserDir + File.separator + "typeparser-0.1.jar"), StandardCopyOption.REPLACE_EXISTING);

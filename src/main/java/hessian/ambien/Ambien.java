@@ -26,9 +26,7 @@ import javax.net.ssl.TrustManagerFactory;
 import java.io.*;
 import java.security.*;
 import java.security.cert.CertificateException;
-import java.text.ParseException;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public class Ambien {
     private String version = "0.0.1";
@@ -108,7 +106,7 @@ public class Ambien {
             cluster.close();
     }
     
-    public boolean run(String[] args) 
+    private boolean run(String[] args)
         throws IOException, KeyStoreException, NoSuchAlgorithmException, KeyManagementException,
                CertificateException, UnrecoverableKeyException {
         if (!params.parseArgs(args)) {
@@ -171,8 +169,7 @@ public class Ambien {
     }
 
     public static void main(String[] args) 
-        throws IOException, ParseException, InterruptedException, ExecutionException,
-               KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException,
+        throws IOException, KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException,
                CertificateException, KeyManagementException {
         Ambien a = new Ambien();
         boolean success = a.run(args);

@@ -35,7 +35,7 @@ public class AmbienDomain {
         return true;
     }
 
-    public boolean produceClass() {
+    private boolean produceClass() {
         StringBuilder sb = new StringBuilder();
         sb.append("package hessian.ambien.domain;\n" +
                 "\n" +

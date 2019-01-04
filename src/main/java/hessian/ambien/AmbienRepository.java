@@ -74,7 +74,6 @@ public class AmbienRepository {
         sbr.append("\t\treturn x;\n");
         sbr.append("\t}\n\n");
 
-        /* TODO: Figure out how to add AnyParser */
         restEndpoints.add("/api/add");
         sbc.append("\t// Add new\n");
         sbc.append("\t@RequestMapping(value = \"api/add\", method = RequestMethod.POST)\n" +
@@ -98,12 +97,6 @@ public class AmbienRepository {
         sbc.append("\t\t" + name + "Repository.save(" + name + ");\n");
         sbc.append("\t\treturn " + name + ";\n");
         sbc.append("\t}\n\n");
-        /*
-        sbc.append("@RequestBody " + cap_name + " " + name + ") {\n" +
-                "\t\t" + name + "Repository.save(" + name + ");\n" +
-                "\t\treturn " + name + ";\n" +
-                "\t}\n\n");
-                */
 
         // Delete
         sbr.append("\tpublic void delete(");
@@ -437,9 +430,5 @@ public class AmbienRepository {
                 "</body>\n" +
                 "</html>\n";
         return Ambien.writeFile(fname, page);
-    }
-
-    public List<String> getBases() {
-        return bases;
     }
 }
