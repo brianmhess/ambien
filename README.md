@@ -24,7 +24,6 @@ OPTIONS:
   -ssl-truststore-pw <pwd>       Password for SSL truststore [none]
   -ssl-keystore-path <path>      Path to SSL keystore [none]
   -ssl-keystore-pw <pwd>         Password for SSL keystore [none]
-
 ```
 
 This will produce a directory of source code in the supplied directory.
@@ -45,35 +44,35 @@ Print Hello World:
 ```
 http://hostname:8222/api/hello
 ```
-Select all rows:
+Select all rows (GET):
 ```
 http://hostname:8222/api/all
 ```
-Select some rows:
+Select some rows (GET and POST):
 ``` 
-http://hostname:8222/api/some/{some}
+http://hostname:8222/api/some/?some={some}
 ```
-Select by partition keys
+Select by partition keys (GET and POST):
 ```
-http://hostname:8222/api/<partitionKey1>_<partitionKey2>_..._<partitionKeyN>/{partitionKey1}/{partitionKey2}/.../{partitionKeyN}
+http://hostname:8222/api/<partitionKey1>_<partitionKey2>_..._<partitionKeyN>/?partitionKey1={partitionKey1}&partitionKey2={partitionKey2}&...&partitionKeyN={partitionKeyN}
 ```
-Select by partition keys and clustering key(s)
+Select by partition keys and clustering key(s) (GET and POST):
 ```
-http://hostname:8222/api/<pkey1>_<ccol1>/{pkey1}/{ccol1}
-http://hostname:8222/api/<pkey1>_<ccol1>_<ccol2>/{pkey1}/{ccol1}/{ccol2}
+http://hostname:8222/api/<pkey1>_<ccol1>?pkey={pkey1}&ccol1={ccol1}
+http://hostname:8222/api/<pkey1>_<ccol1>_<ccol2>?pkey1={pkey1}&ccol1={ccol1}&ccol2={ccol2}
 ...
 ```
-Select by partition key and inequality on clustering key(s)
+Select by partition key and inequality on clustering key(s) (GET and POST):
 ```
-http://hostname:8222/api/<pkey1>_<ccol1>_lt/{pkey1}/{ccol1}
-http://hostname:8222/api/<pkey1>_<ccol1>_gt/{pkey1}/{ccol1}
-http://hostname:8222/api/<pkey1>_<ccol1>_lte/{pkey1}/{ccol1}
-http://hostname:8222/api/<pkey1>_<ccol1>_gte/{pkey1}/{ccol1}
+http://hostname:8222/api/<pkey1>_<ccol1>_lt?pkey1={pkey1}&ccol1={ccol1}
+http://hostname:8222/api/<pkey1>_<ccol1>_gt?pkey1={pkey1}&ccol1={ccol1}
+http://hostname:8222/api/<pkey1>_<ccol1>_lte?pkey1={pkey1}&ccol1={ccol1}
+http://hostname:8222/api/<pkey1>_<ccol1>_gte?pkey1={pkey1}&ccol1={ccol1}
 
-http://hostname:8222/api/<pkey1>_<ccol1>_<ccol2>_lt/{pkey1}/{ccol1}/{ccol2}
-http://hostname:8222/api/<pkey1>_<ccol1>_<ccol2>_gt/{pkey1}/{ccol1}/{ccol2}
-http://hostname:8222/api/<pkey1>_<ccol1>_<ccol2>_lte/{pkey1}/{ccol1}/{ccol2}
-http://hostname:8222/api/<pkey1>_<ccol1>_<ccol2>_gte/{pkey1}/{ccol1}/{ccol2}
+http://hostname:8222/api/<pkey1>_<ccol1>_<ccol2>_lt?pkey1={pkey1}&ccol1={ccol1}&ccol2={ccol2}
+http://hostname:8222/api/<pkey1>_<ccol1>_<ccol2>_gt?pkey1={pkey1}&ccol1={ccol1}&ccol2={ccol2}
+http://hostname:8222/api/<pkey1>_<ccol1>_<ccol2>_lte?pkey1={pkey1}&ccol1={ccol1}&ccol2={ccol2}
+http://hostname:8222/api/<pkey1>_<ccol1>_<ccol2>_gte?pkey1={pkey1}&ccol1={ccol1}&ccol2={ccol2}
 ...
 ```
 

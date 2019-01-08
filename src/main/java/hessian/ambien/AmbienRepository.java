@@ -78,13 +78,13 @@ public class AmbienRepository {
         sbc.append("\t// Add new\n");
         sbc.append("\t@RequestMapping(value = \"api/add\", method = RequestMethod.POST)\n" +
                 "\tpublic " + cap_name + " save(");
-        sbc.append("@RequestBody String " + partitionCols.get(0).getName());
+        sbc.append("@RequestParam String " + partitionCols.get(0).getName());
         for (i = 1; i < partitionCols.size(); i++)
-            sbc.append(", @RequestBody String " + partitionCols.get(i).getName());
+            sbc.append(", @RequestParam String " + partitionCols.get(i).getName());
         for (i = 0; i < clusteringCols.size(); i++)
-            sbc.append(", @RequestBody String " + clusteringCols.get(i).getName());
+            sbc.append(", @RequestParam String " + clusteringCols.get(i).getName());
         for (i = 0; i < regularCols.size(); i++)
-            sbc.append(", @RequestBody String " + regularCols.get(i).getName());
+            sbc.append(", @RequestParam(required = false) String " + regularCols.get(i).getName());
         sbc.append(") throws ParseException {\n");
         sbc.append("\t\t" + cap_name + " " + name + " = new " + cap_name + "(AnyParser.parse(" + partitionCols.get(0).getName() + ", " + typeFor(partitionCols.get(0)) + ".class)");
         for (i = 1; i < partitionCols.size(); i++)
@@ -119,11 +119,11 @@ public class AmbienRepository {
         sbc.append("\t// Delete\n");
         sbc.append("\t@RequestMapping(value = \"api/delete\", method = RequestMethod.POST)\n" +
                 "\tpublic void delete(");
-        sbc.append("@RequestBody String " + partitionCols.get(0).getName());
+        sbc.append("@RequestParam String " + partitionCols.get(0).getName());
         for (i = 1; i < partitionCols.size(); i++)
-            sbc.append(", @RequestBody String " + partitionCols.get(i).getName());
+            sbc.append(", @RequestParam String " + partitionCols.get(i).getName());
         for (i = 0; i < clusteringCols.size(); i++)
-            sbc.append(", @RequestBody String " + clusteringCols.get(i).getName());
+            sbc.append(", @RequestParam String " + clusteringCols.get(i).getName());
         sbc.append(") throws ParseException {\n");
         sbc.append("\t\t" + name + "Repository.delete(");
         sbc.append("AnyParser.parse(" + partitionCols.get(0).getName() + ", " + typeFor(partitionCols.get(0)) + ".class)");
@@ -179,7 +179,9 @@ public class AmbienRepository {
         //    Controller
         restEndpoints.add("/api/some/{some}");
         sbc.append("\t// Find Some\n");
-        sbc.append("\t@RequestMapping(\"api/some/{some}\")\n\tpublic List<" + cap_name + "> some(@PathVariable int some) {\n");
+        sbc.append("\t@RequestMapping(\"api/some/{some}\")\n\tpublic List<" + cap_name + "> someGet(@PathVariable int some) {\n");
+        sbc.append("\t\treturn (ArrayList<" + cap_name + ">)" + name + "Repository.findSome(some);\n\t}\n\n");
+        sbc.append("\t@RequestMapping(value = \"api/some\", method = {RequestMethod.POST, RequestMethod.GET})\n\tpublic List<" + cap_name + "> somePost(@RequestParam int some) {\n");
         sbc.append("\t\treturn (ArrayList<" + cap_name + ">)" + name + "Repository.findSome(some);\n\t}\n\n");
 
 
@@ -324,6 +326,27 @@ public class AmbienRepository {
 
     private void genFunction(StringBuilder sbr, StringBuilder sbc, String base, List<Pair<String,String>> cols,
                              String path, String pathvars, boolean allowFiltering, String ineq) {
+        genFunctionPostAndGet(sbr, sbc, base, cols, path, pathvars, allowFiltering, ineq);
+    }
+
+    private void genFunctionGet(StringBuilder sbr, StringBuilder sbc, String base, List<Pair<String,String>> cols,
+                               String path, String pathvars, boolean allowFiltering, String ineq) {
+        genFunction(sbr, sbc, base, cols, path, pathvars, allowFiltering, ineq, "@PathVariable", "RequestMethod.GET");
+    }
+
+    private void genFunctionPost(StringBuilder sbr, StringBuilder sbc, String base, List<Pair<String,String>> cols,
+                                String path, String pathvars, boolean allowFiltering, String ineq) {
+        genFunction(sbr, sbc, base, cols, path, "", allowFiltering, ineq, "@RequestParam", "RequestMethod.POST");
+    }
+
+    private void genFunctionPostAndGet(StringBuilder sbr, StringBuilder sbc, String base, List<Pair<String,String>> cols,
+                                 String path, String pathvars, boolean allowFiltering, String ineq) {
+        genFunction(sbr, sbc, base, cols, path, "", allowFiltering, ineq, "@RequestParam", "{RequestMethod.POST, RequestMethod.GET}");
+    }
+
+    private void genFunction(StringBuilder sbr, StringBuilder sbc, String base, List<Pair<String,String>> cols,
+                                String path, String pathvars, boolean allowFiltering, String ineq, String varPrefix,
+                                String requestMethod) {
         // Repository
         sbr.append("\tprivate static BuiltStatement built_" + base + " = " + queryBuilderBase);
         if (1 == cols.size()) {
@@ -355,11 +378,11 @@ public class AmbienRepository {
 
         // Controller
         restEndpoints.add("/api/" + path + pathvars);
-        sbc.append("\t@RequestMapping(value = \"api/" + path + pathvars + "\")\n");
-        sbc.append("\n\tpublic List<" + cap_name + "> " + base);
-        sbc.append("(@PathVariable String " + cols.get(0).getKey());
+        sbc.append("\t@RequestMapping(value = \"api/" + path + pathvars + "\", method = " + requestMethod + ")\n");
+        sbc.append("\tpublic List<" + cap_name + "> " + base);
+        sbc.append("(" + varPrefix + " String " + cols.get(0).getKey());
         for (int i = 1; i < cols.size(); i++) {
-            sbc.append(", @PathVariable String " + cols.get(i).getKey());
+            sbc.append(", " + varPrefix + " String " + cols.get(i).getKey());
         }
         sbc.append(") throws ParseException  {\n");
         sbc.append("\t\treturn (ArrayList<" + cap_name + ">)" + name + "Repository." + base + "(");
@@ -425,7 +448,7 @@ public class AmbienRepository {
                 note +
                 "<h2>These are the supported REST endpoints</h2>\n" +
                 restList() +
-                "<p><a href=\"/api/some/10\">Show me <i>some</i></a></p>\n" +
+                "<p><a href=\"/api/some?some=10\">Show me <i>some</i></a></p>\n" +
                 "<p><a href=\"/actuator/\">The Actuator</a></p>\n" +
                 "</body>\n" +
                 "</html>\n";
