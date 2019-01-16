@@ -4,9 +4,6 @@
 3. Store keystore/truststore in project and use in connecting to DSE
     * Will need to figure out how to extract the keystore/truststore to file system
 4. Detect Search and enable additional queries
-5. Provide REST endpoint root (defaults today to /api/)
-6. Include keyspace/table in the REST endpoint root (like /api/myks/mytbl/)
-7. Provide the HTTP port number
 
 
 ## Additional Queries

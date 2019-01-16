@@ -24,6 +24,8 @@ OPTIONS:
   -ssl-truststore-pw <pwd>       Password for SSL truststore [none]
   -ssl-keystore-path <path>      Path to SSL keystore [none]
   -ssl-keystore-pw <pwd>         Password for SSL keystore [none]
+  -httpPort <httpPort>           Port for HTTP REST endpoint [8222]
+  -endpointRoot <root>           REST endpoint to create (use '$keyspace' for keyspace name and '$table' for table name) [api/$keyspace/$table]  
 ```
 
 This will produce a directory of source code in the supplied directory.

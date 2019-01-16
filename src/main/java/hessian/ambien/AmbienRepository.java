@@ -24,6 +24,7 @@ public class AmbienRepository {
     private String[] ineq = {"lt", "lte", "gt", "gte"};
     private List<String> bases;
     private List<String> restEndpoints;
+    String endpointPrefix;
 
 
     public AmbienRepository(AmbienParams params, List<ColumnMetadata> partitionCols, List<ColumnMetadata> clusteringCols,
@@ -74,9 +75,12 @@ public class AmbienRepository {
         sbr.append("\t\treturn x;\n");
         sbr.append("\t}\n\n");
 
-        restEndpoints.add("/api/add");
+        //endpointPrefix = "api/" + params.keyspace_name + "/" + params.table_name + "/";
+        endpointPrefix = params.endpointRoot + "/";
+        String endpoint = endpointPrefix + "add";
+        restEndpoints.add(endpoint);
         sbc.append("\t// Add new\n");
-        sbc.append("\t@RequestMapping(value = \"api/add\", method = RequestMethod.POST)\n" +
+        sbc.append("\t@RequestMapping(value = \"" + endpoint + "\", method = RequestMethod.POST)\n" +
                 "\tpublic " + cap_name + " save(");
         sbc.append("@RequestParam String " + partitionCols.get(0).getName());
         for (i = 1; i < partitionCols.size(); i++)
@@ -86,13 +90,13 @@ public class AmbienRepository {
         for (i = 0; i < regularCols.size(); i++)
             sbc.append(", @RequestParam(required = false) String " + regularCols.get(i).getName());
         sbc.append(") throws ParseException {\n");
-        sbc.append("\t\t" + cap_name + " " + name + " = new " + cap_name + "(AnyParser.parse(" + partitionCols.get(0).getName() + ", " + typeFor(partitionCols.get(0)) + ".class)");
+        sbc.append("\t\t" + cap_name + " " + name + " = new " + cap_name + "(anyParser.parse(" + partitionCols.get(0).getName() + ", " + typeFor(partitionCols.get(0)) + ".class)");
         for (i = 1; i < partitionCols.size(); i++)
-            sbc.append(", AnyParser.parse(" + partitionCols.get(i).getName() + ", " + typeFor(partitionCols.get(i)) + ".class)");
+            sbc.append(", anyParser.parse(" + partitionCols.get(i).getName() + ", " + typeFor(partitionCols.get(i)) + ".class)");
         for (i = 0; i < clusteringCols.size(); i++)
-            sbc.append(", AnyParser.parse(" + clusteringCols.get(i).getName() + ", " + typeFor(clusteringCols.get(i)) + ".class)");
+            sbc.append(", anyParser.parse(" + clusteringCols.get(i).getName() + ", " + typeFor(clusteringCols.get(i)) + ".class)");
         for (i = 0; i < regularCols.size(); i++)
-            sbc.append(", AnyParser.parse(" + regularCols.get(i).getName() + ", " + typeFor(regularCols.get(i)) + ".class)");
+            sbc.append(", anyParser.parse(" + regularCols.get(i).getName() + ", " + typeFor(regularCols.get(i)) + ".class)");
         sbc.append(");\n");
         sbc.append("\t\t" + name + "Repository.save(" + name + ");\n");
         sbc.append("\t\treturn " + name + ";\n");
@@ -115,9 +119,10 @@ public class AmbienRepository {
         sbr.append(");\n");
         sbr.append("\t}\n\n");
 
-        restEndpoints.add("/api/delete");
+        endpoint = endpointPrefix + "delete";
+        restEndpoints.add(endpoint);
         sbc.append("\t// Delete\n");
-        sbc.append("\t@RequestMapping(value = \"api/delete\", method = RequestMethod.POST)\n" +
+        sbc.append("\t@RequestMapping(value = \"" + endpoint + "\", method = RequestMethod.POST)\n" +
                 "\tpublic void delete(");
         sbc.append("@RequestParam String " + partitionCols.get(0).getName());
         for (i = 1; i < partitionCols.size(); i++)
@@ -126,11 +131,11 @@ public class AmbienRepository {
             sbc.append(", @RequestParam String " + clusteringCols.get(i).getName());
         sbc.append(") throws ParseException {\n");
         sbc.append("\t\t" + name + "Repository.delete(");
-        sbc.append("AnyParser.parse(" + partitionCols.get(0).getName() + ", " + typeFor(partitionCols.get(0)) + ".class)");
+        sbc.append("anyParser.parse(" + partitionCols.get(0).getName() + ", " + typeFor(partitionCols.get(0)) + ".class)");
         for (i = 1; i < partitionCols.size(); i++)
-            sbc.append(", AnyParser.parse(" + partitionCols.get(i).getName() + ", " + typeFor(partitionCols.get(i)) + ".class)");
+            sbc.append(", anyParser.parse(" + partitionCols.get(i).getName() + ", " + typeFor(partitionCols.get(i)) + ".class)");
         for (i = 0; i < clusteringCols.size(); i++)
-            sbc.append(", AnyParser.parse(" + clusteringCols.get(i).getName() + ", " + typeFor(clusteringCols.get(i)) + ".class)");
+            sbc.append(", anyParser.parse(" + clusteringCols.get(i).getName() + ", " + typeFor(clusteringCols.get(i)) + ".class)");
         sbc.append(");\n");
         sbc.append("\t}\n\n");
 
@@ -159,9 +164,10 @@ public class AmbienRepository {
         sbr.append("\t}\n\n");
 
         //    Controller
-        restEndpoints.add("/api/all");
+        endpoint = endpointPrefix + "all";
+        restEndpoints.add(endpoint);
         sbc.append("\t// Find all\n");
-        sbc.append("\t@RequestMapping(\"api/all\")\n\tpublic List<" + cap_name + "> all() {\n");
+        sbc.append("\t@RequestMapping(\"" + endpoint + "\")\n\tpublic List<" + cap_name + "> all() {\n");
         sbc.append("\t\treturn (ArrayList<" + cap_name + ">)" + name + "Repository.findAll();\n\t}\n\n");
 
         // Find Some
@@ -177,11 +183,13 @@ public class AmbienRepository {
         sbr.append("\t}\n\n");
 
         //    Controller
-        restEndpoints.add("/api/some/{some}");
+        endpoint = endpointPrefix + "some";
         sbc.append("\t// Find Some\n");
-        sbc.append("\t@RequestMapping(\"api/some/{some}\")\n\tpublic List<" + cap_name + "> someGet(@PathVariable int some) {\n");
+        restEndpoints.add(endpoint + "/{some}");
+        sbc.append("\t@RequestMapping(\"" + endpoint + "/{some}\")\n\tpublic List<" + cap_name + "> someGet(@PathVariable int some) {\n");
         sbc.append("\t\treturn (ArrayList<" + cap_name + ">)" + name + "Repository.findSome(some);\n\t}\n\n");
-        sbc.append("\t@RequestMapping(value = \"api/some\", method = {RequestMethod.POST, RequestMethod.GET})\n\tpublic List<" + cap_name + "> somePost(@RequestParam int some) {\n");
+        restEndpoints.add(endpoint + "?some={some}");
+        sbc.append("\t@RequestMapping(value = \"" + endpoint + "\", method = {RequestMethod.POST, RequestMethod.GET})\n\tpublic List<" + cap_name + "> somePost(@RequestParam int some) {\n");
         sbc.append("\t\treturn (ArrayList<" + cap_name + ">)" + name + "Repository.findSome(some);\n\t}\n\n");
 
 
@@ -311,6 +319,7 @@ public class AmbienRepository {
                 "@RestController\n" +
                 "public class " + cap_name + "RestController {\n");
         sbc.append("\t@Autowired\n\tprivate " + cap_name + "Repository " + name + "Repository;\n\n");
+        sbc.append("\tprivate AnyParser anyParser = new AnyParser();\n\n");
 
         // Hello
         sbc.append("\t@RequestMapping(\"api/hello\")\n" +
@@ -377,8 +386,9 @@ public class AmbienRepository {
 
 
         // Controller
-        restEndpoints.add("/api/" + path + pathvars);
-        sbc.append("\t@RequestMapping(value = \"api/" + path + pathvars + "\", method = " + requestMethod + ")\n");
+        String endpoint = endpointPrefix + path + pathvars;
+        restEndpoints.add(endpoint);
+        sbc.append("\t@RequestMapping(value = \"" + endpoint + "\", method = " + requestMethod + ")\n");
         sbc.append("\tpublic List<" + cap_name + "> " + base);
         sbc.append("(" + varPrefix + " String " + cols.get(0).getKey());
         for (int i = 1; i < cols.size(); i++) {
@@ -386,12 +396,11 @@ public class AmbienRepository {
         }
         sbc.append(") throws ParseException  {\n");
         sbc.append("\t\treturn (ArrayList<" + cap_name + ">)" + name + "Repository." + base + "(");
-        sbc.append("AnyParser.parse(" + cols.get(0).getKey() + ", " + cols.get(0).getValue() + ".class)");
+        sbc.append("anyParser.parse(" + cols.get(0).getKey() + ", " + cols.get(0).getValue() + ".class)");
         for (int i = 1; i < cols.size(); i++) {
-            sbc.append(", AnyParser.parse(" + cols.get(i).getKey() + ", " + cols.get(i).getValue() + ".class)");
+            sbc.append(", anyParser.parse(" + cols.get(i).getKey() + ", " + cols.get(i).getValue() + ".class)");
         }
         sbc.append(");\n\t}\n\n");
-
     }
 
     private void genFunctionInequality(StringBuilder sbr, StringBuilder sbc, String base, List<Pair<String,String>> cols,

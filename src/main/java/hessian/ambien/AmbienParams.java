@@ -16,6 +16,9 @@ public class AmbienParams {
     public String table_name = null;
     public String keyspace_name = null;
     public String output_dir = null;
+    public int httpPort = 8222;
+    public String endpointRoot = "api/$keyspace/$table";
+
     public String srcDir = null;
     public String srcMainDir = null;
     public String srcMainJavaDir = null;
@@ -43,6 +46,8 @@ public class AmbienParams {
         usage.append("  -ssl-truststore-pw <pwd>       Password for SSL truststore [none]\n");
         usage.append("  -ssl-keystore-path <path>      Path to SSL keystore [none]\n");
         usage.append("  -ssl-keystore-pw <pwd>         Password for SSL keystore [none]\n");
+        usage.append("  -httpPort <httpPort>           Port for HTTP REST endpoint [8222]\n");
+        usage.append("  -endpointRoot <root>           REST endpoint to create (use '$keyspace' for keyspace name and '$table' for table name) [api/$keyspace/$table]");
         return usage.toString();
     }
 
@@ -66,6 +71,7 @@ public class AmbienParams {
             return false;
         }
 
+        if (false == setEndpointRoot()) return false;
         return true;
     }
 
@@ -132,7 +138,8 @@ public class AmbienParams {
             output_dir = tkey;
             setPaths();
         }
-
+        if (null != (tkey = amap.remove("-httpPort")))       httpPort = Integer.parseInt(tkey);
+        if (null != (tkey = amap.remove("-endpointRoot")))   endpointRoot = tkey;
 
         return validateArgs();
     }
@@ -151,4 +158,10 @@ public class AmbienParams {
         srcMainResourcesTemplatesDir = srcMainResourcesDir + File.separator + "templates";
     }
 
+    private boolean setEndpointRoot() {
+        endpointRoot = endpointRoot.replace("$keyspace", keyspace_name);
+        endpointRoot = endpointRoot.replace("$table", table_name);
+        if (endpointRoot.endsWith("/")) endpointRoot = endpointRoot.substring(0, endpointRoot.length() - 1);
+        return true;
+    }
 }

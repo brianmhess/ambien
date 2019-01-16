@@ -149,18 +149,21 @@ public class Ambien {
         // Produce Boilerplate (pom.xml, etc)
         AmbienBoilerplate ab = new AmbienBoilerplate(params);
         if (!ab.produceBoilerplate()) {
+            System.err.println("Had trouble producing boilerplate");
             return cleanup(false);
         }
 
         // Produce Domain Classes
         AmbienDomain ad = new AmbienDomain(params, partitionCols, clusteringCols, regularCols, cr);
         if(!ad.produceDomainClasses()) {
+            System.err.println("Had trouble producing domain classes");
             return cleanup(false);
         }
 
         // Produce Repository Classes
         AmbienRepository ar = new AmbienRepository(params, partitionCols, clusteringCols, regularCols, cr);
         if(!ar.produceRepositoryClasses()) {
+            System.err.println("Had trouble producing repository and controller classes");
             return cleanup(false);
         }
 
@@ -184,7 +187,10 @@ public class Ambien {
 
     public static boolean writeFile(String path, String contents) {
         File tfile = new File(path);
-        if (tfile.exists()) return false;
+        if (tfile.exists()) {
+            System.err.println("File " + path + " already exists");
+            return false;
+        }
         try {
             if (!tfile.createNewFile()) return false;
         } catch (IOException e) {

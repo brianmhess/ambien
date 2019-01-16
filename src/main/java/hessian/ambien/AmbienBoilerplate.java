@@ -179,7 +179,7 @@ public class AmbienBoilerplate {
                 "# Spring Boot parameters\n" +
                 "# ----------------------\n" +
                 "spring.application.name=Ambien\n" +
-                "server.port=8222\n" +
+                "server.port=" + params.httpPort + "\n" +
                 "\n" +
                 "springdata.basepackage=hessian.ambien.domain;\n" +
                 "management.endpoints.web.exposure.include=*\n" +
