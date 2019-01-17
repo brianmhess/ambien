@@ -1,9 +1,8 @@
 # Ideas for the future
 1. Additional queries (see below)
-2. Provide package name
-3. Store keystore/truststore in project and use in connecting to DSE
+2. Store keystore/truststore in project and use in connecting to DSE
     * Will need to figure out how to extract the keystore/truststore to file system
-4. Detect Search and enable additional queries
+3. Detect Search and enable additional queries
 
 
 ## Additional Queries

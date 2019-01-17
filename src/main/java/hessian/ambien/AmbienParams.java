@@ -1,8 +1,7 @@
 package hessian.ambien;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class AmbienParams {
     public String host = null;
@@ -13,30 +12,26 @@ public class AmbienParams {
     public String truststorePwd = null;
     public String keystorePath = null;
     public String keystorePwd = null;
-    public String table_name = null;
-    public String keyspace_name = null;
+    public String kt_list = null;
+    public List<String> table_name = new ArrayList<String>();
+    public List<String> keyspace_name = new ArrayList<String>();
     public String output_dir = null;
     public int httpPort = 8222;
     public String endpointRoot = "api/$keyspace/$table";
+    public String package_name = "hessian.ambien";
 
-    public String srcDir = null;
-    public String srcMainDir = null;
-    public String srcMainJavaDir = null;
-    public String srcMainJavaHessianDir = null;
-    public String srcMainJavaHessianAmbienDir = null;
-    public String srcMainJavaHessianAmbienDomainDir = null;
-    public String srcMainJavaHessianAmbienRepositoryDir = null;
-    public String srcMainJavaHessianAmbienControllerDir = null;
-    public String srcMainResourcesDir = null;
-    public String srcMainResourcesStaticDir = null;
-    public String srcMainResourcesTemplatesDir = null;
+    public String javaSrcDir = null;
+    public String resourcesDir = null;
+    public String resourcesTemplatesDir = null;
+    public String srcDomainDir = null;
+    public String srcRepositoryDir = null;
+    public String srcControllerDir = null;
 
     public static String usage() {
         StringBuilder usage = new StringBuilder();
         usage.append("OPTIONS:\n");
         usage.append("  -host <hostname>               Contact point for DSE [required]\n");
-        usage.append("  -k <keyspacename>              Keyspace to use [required]\n");
-        usage.append("  -t <tablename>                 Table to use [required]\n");
+        usage.append("  -kt <keyspace.table>           Keyspace and Table to use, can be a comma-separated list [required]");
         usage.append("  -o <outputDir>                 Directory to write to (must be empty) [required]\n");
         usage.append("  -configFile <filename>         File with configuration options [none]\n");
         usage.append("  -port <portNumber>             CQL Port Number [9042]\n");
@@ -47,7 +42,8 @@ public class AmbienParams {
         usage.append("  -ssl-keystore-path <path>      Path to SSL keystore [none]\n");
         usage.append("  -ssl-keystore-pw <pwd>         Password for SSL keystore [none]\n");
         usage.append("  -httpPort <httpPort>           Port for HTTP REST endpoint [8222]\n");
-        usage.append("  -endpointRoot <root>           REST endpoint to create (use '$keyspace' for keyspace name and '$table' for table name) [api/$keyspace/$table]");
+        usage.append("  -endpointRoot <root>           REST endpoint to create (use '$keyspace' for keyspace name and '$table' for table name) [api/$keyspace/$table]\n");
+        usage.append("  -packageName <pkg>             Package name [hessian.ambien]\n");
         return usage.toString();
     }
 
@@ -56,12 +52,20 @@ public class AmbienParams {
             System.err.println("No host provided.");
             return false;
         }
-        if (null == table_name) {
+        if (null == kt_list) {
+            System.err.println("No keyspace.table provided");
+            return false;
+        }
+        if (!makeKeyspaceTableLists()) {
+            System.err.println("Keyspace.Table list incorrect (\"" + kt_list + "\")");
+            return false;
+        }
+        if (0 == table_name.size()) {
             System.err.println("No table name provided.");
             return false;
         }
 
-        if (null == keyspace_name) {
+        if (0 == keyspace_name.size()) {
             System.err.println("No keyspace name provided.");
             return false;
         }
@@ -71,7 +75,6 @@ public class AmbienParams {
             return false;
         }
 
-        if (false == setEndpointRoot()) return false;
         return true;
     }
 
@@ -130,38 +133,87 @@ public class AmbienParams {
         if (null != (tkey = amap.remove("-ssl-truststore-pw")))  truststorePwd =  tkey;
         if (null != (tkey = amap.remove("-ssl-keystore-path")))   keystorePath = tkey;
         if (null != (tkey = amap.remove("-ssl-keystore-pw")))    keystorePwd = tkey;
-        if (null != (tkey = amap.remove("-t")))               table_name = tkey;
-        if (null != (tkey = amap.remove("-k")))               keyspace_name = tkey;
+        if (null != (tkey = amap.remove("-kt")))               kt_list = tkey;
+        if (null != (tkey = amap.remove("-httpPort")))       httpPort = Integer.parseInt(tkey);
+        if (null != (tkey = amap.remove("-endpointRoot")))   endpointRoot = tkey;
+        if (null != (tkey = amap.remove("-packageName")))    package_name = tkey;
         if (null != (tkey = amap.remove(("-o")))) {
             if (tkey.endsWith("\\"))
                 tkey = tkey.substring(0, tkey.length()-1);
             output_dir = tkey;
             setPaths();
         }
-        if (null != (tkey = amap.remove("-httpPort")))       httpPort = Integer.parseInt(tkey);
-        if (null != (tkey = amap.remove("-endpointRoot")))   endpointRoot = tkey;
 
         return validateArgs();
     }
 
-    private void setPaths() {
-        srcDir = output_dir + File.separator + "src";
-        srcMainDir = srcDir + File.separator + "main";
-        srcMainJavaDir = srcMainDir + File.separator + "java";
-        srcMainJavaHessianDir = srcMainJavaDir + File.separator + "hessian";
-        srcMainJavaHessianAmbienDir = srcMainJavaHessianDir + File.separator + "ambien";
-        srcMainJavaHessianAmbienDomainDir = srcMainJavaHessianAmbienDir + File.separator + "domain";
-        srcMainJavaHessianAmbienRepositoryDir = srcMainJavaHessianAmbienDir + File.separator + "repository";
-        srcMainJavaHessianAmbienControllerDir = srcMainJavaHessianAmbienDir + File.separator + "contoller";
-        srcMainResourcesDir = srcMainDir + File.separator + "resources";
-        srcMainResourcesStaticDir = srcMainResourcesDir + File.separator + "static";
-        srcMainResourcesTemplatesDir = srcMainResourcesDir + File.separator + "templates";
+    private String pathify(String[] elements) {
+        if (elements.length < 1)
+            return "";
+        String retStr = elements[0];
+        for (int i = 1; i < elements.length; i++)
+            retStr = retStr + File.separator + elements[i];
+        return retStr;
+    }
+    private String makePath(String ... segments) {
+        String retStr = segments[0];
+        for (int i = 1; i < segments.length; i++)
+            retStr = retStr + File.separator + segments[i];
+        return retStr;
     }
 
-    private boolean setEndpointRoot() {
-        endpointRoot = endpointRoot.replace("$keyspace", keyspace_name);
-        endpointRoot = endpointRoot.replace("$table", table_name);
-        if (endpointRoot.endsWith("/")) endpointRoot = endpointRoot.substring(0, endpointRoot.length() - 1);
+    private void setPaths() {
+        resourcesDir = makePath(output_dir, "src", "main", "resources");
+        resourcesTemplatesDir = makePath(output_dir, "src", "main", "resources", "templates");
+        String pkgPath = pathify(package_name.split("\\."));
+        javaSrcDir = makePath(output_dir, "src", "main", "java", pkgPath);
+        srcDomainDir = makePath(output_dir, "src", "main", "java", pkgPath, "domain");
+        srcRepositoryDir = makePath(output_dir, "src", "main", "java", pkgPath, "repository");
+        srcControllerDir = makePath(output_dir, "src", "main", "java", pkgPath, "controller");
+
+    }
+
+    private boolean makeKeyspaceTableLists() {
+        String[] ktlist = kt_list.split(",");
+        if (ktlist.length < 1) {
+            System.err.println("Found only " + ktlist.length + " keyspace/table pairs");
+            return false;
+        }
+        for (String kt : ktlist) {
+            String[] ktpair = kt.split("\\.");
+            if (ktpair.length != 2) {
+                System.err.println("Bad keyspace/table input: " + kt + " (" + ktpair.length + ") [" + Arrays.toString(ktpair) + "]");
+                return false;
+            }
+            keyspace_name.add(ktpair[0]);
+            table_name.add(ktpair[1]);
+        }
         return true;
+    }
+
+    public String endpointRoot(String keyspace_name, String table_name) {
+        String retStr = endpointRoot.replace("$keyspace", keyspace_name);
+        retStr = retStr.replace("$table", table_name);
+        if (retStr.endsWith("/")) retStr = retStr.substring(0, retStr.length() - 1);
+        return retStr;
+    }
+
+    @Override
+    public String toString() {
+        return "AmbienParams{" +
+                "host='" + host + '\'' +
+                ", port=" + port +
+                ", username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                ", truststorePath='" + truststorePath + '\'' +
+                ", truststorePwd='" + truststorePwd + '\'' +
+                ", keystorePath='" + keystorePath + '\'' +
+                ", keystorePwd='" + keystorePwd + '\'' +
+                ", kt_list='" + kt_list + '\'' +
+                ", output_dir='" + output_dir + '\'' +
+                ", httpPort=" + httpPort +
+                ", endpointRoot='" + endpointRoot + '\'' +
+                ", package_name='" + package_name + '\'' +
+                '}';
     }
 }

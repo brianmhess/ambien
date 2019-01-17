@@ -9,24 +9,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AmbienDomain {
-    private AmbienParams params = null;
-    private String name = null;
-    private String cap_name = null;
+    private String tableName = null;
+    private String keyspaceName = null;
+    private String className = null;
     private CodecRegistry cr = null;
-    private String output_dir = null;
     private List<ColumnMetadata> partitionCols = null;
     private List<ColumnMetadata> clusteringCols = null;
     private List<ColumnMetadata> regularCols = null;
+    private String outputDir = null;
+    private AmbienParams params = null;
 
-    public AmbienDomain(AmbienParams params, List<ColumnMetadata> partitionCols, List<ColumnMetadata> clusteringCols, List<ColumnMetadata> regularCols, CodecRegistry cr) {
-        this.params = params;
-        this.name = params.table_name;
-        this.cap_name = Ambien.capName(name);
-        this.output_dir = params.output_dir;
+    public AmbienDomain(String keyspaceName, String tableName, List<ColumnMetadata> partitionCols,
+                        List<ColumnMetadata> clusteringCols, List<ColumnMetadata> regularCols, CodecRegistry cr,
+                        String outputDir, AmbienParams params) {
+        this.tableName = tableName;
+        this.keyspaceName = keyspaceName;
+        this.className = Ambien.capName(keyspaceName) + Ambien.capName(tableName);
         this.partitionCols = partitionCols;
         this.clusteringCols = clusteringCols;
         this.regularCols = regularCols;
         this.cr = cr;
+        this.outputDir = outputDir;
+        this.params = params;
     }
 
     public boolean produceDomainClasses() {
@@ -37,15 +41,15 @@ public class AmbienDomain {
 
     private boolean produceClass() {
         StringBuilder sb = new StringBuilder();
-        sb.append("package hessian.ambien.domain;\n" +
+        sb.append("package " + params.package_name + ".domain;\n" +
                 "\n" +
                 "import com.datastax.driver.mapping.annotations.Column;\n" +
                 "import com.datastax.driver.mapping.annotations.PartitionKey;\n" +
                 "import com.datastax.driver.mapping.annotations.ClusteringColumn;\n" +
                 "import com.datastax.driver.mapping.annotations.Table;\n" +
                 "\n" +
-                "@Table(name=\"" + name + "\")\n");
-        sb.append("public class " + cap_name + " {\n\n");
+                "@Table(name=\"" + tableName + "\", keyspace = \"" + keyspaceName + "\")\n");
+        sb.append("public class " + className + " {\n\n");
 
         List<Pair<String,String>> cols = new ArrayList<Pair<String,String>>(partitionCols.size() + clusteringCols.size() + regularCols.size());
 
@@ -74,8 +78,8 @@ public class AmbienDomain {
         }
 
         // Contructor
-        sb.append("\tpublic " + cap_name + "() { }\n\n");
-        sb.append("\tpublic " + cap_name + "(");
+        sb.append("\tpublic " + className + "() { }\n\n");
+        sb.append("\tpublic " + className + "(");
         sb.append(cols.get(0).getValue() + " " + cols.get(0).getKey());
         for (int i = 1; i < cols.size(); i++) {
             sb.append(", " + cols.get(i).getValue() + " " + cols.get(i).getKey());
@@ -103,7 +107,7 @@ public class AmbienDomain {
 
         // toString
         sb.append("\t@Override\n\tpublic String toString() {\n");
-        sb.append("\t\treturn \"" + cap_name + "{\" +\n");
+        sb.append("\t\treturn \"" + className + "{\" +\n");
         sb.append("\t\t\t\"" + cols.get(0).getKey() + "='\" + " + cols.get(0).getKey() + " + \"'\" +\n");
         for (int i = 1; i < cols.size(); i++) {
             sb.append("\t\t\t\", " + cols.get(i).getKey() + "='\" + " + cols.get(i).getKey() + " + \"'\" +\n");
@@ -115,7 +119,7 @@ public class AmbienDomain {
 
 
         // save file
-        String fname = params.srcMainJavaHessianAmbienDomainDir + File.separator + cap_name + ".java";
+        String fname = outputDir + File.separator + className + ".java";
 
         return Ambien.writeFile(fname, sb.toString());
     }

@@ -26,6 +26,7 @@ import javax.net.ssl.TrustManagerFactory;
 import java.io.*;
 import java.security.*;
 import java.security.cert.CertificateException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Ambien {
@@ -114,6 +115,7 @@ public class Ambien {
             System.err.println(usage());
             return false;
         }
+        System.err.println("Running with: " + params);
 
         // Setup
         setup();
@@ -127,25 +129,6 @@ public class Ambien {
             return cleanup(false);
         }
 
-        // Get Metadata for Table
-        Metadata m = cluster.getMetadata();
-        KeyspaceMetadata km = m.getKeyspace(params.keyspace_name);
-        if (null == km) {
-            System.err.println("Keyspace " + params.keyspace_name + " not found");
-            return cleanup(false);
-        }
-        TableMetadata tm = km.getTable(params.table_name);
-        if (null == tm) {
-            System.err.println("Table " + params.table_name + " not found");
-            return cleanup(false);
-        }
-        List<ColumnMetadata> clusteringCols = tm.getClusteringColumns();
-        List<ColumnMetadata> partitionCols = tm.getPartitionKey();
-        List<ColumnMetadata> regularCols = tm.getColumns();
-        regularCols.removeAll(clusteringCols);
-        regularCols.removeAll(partitionCols);
-        CodecRegistry cr = cluster.getConfiguration().getCodecRegistry();
-
         // Produce Boilerplate (pom.xml, etc)
         AmbienBoilerplate ab = new AmbienBoilerplate(params);
         if (!ab.produceBoilerplate()) {
@@ -153,19 +136,49 @@ public class Ambien {
             return cleanup(false);
         }
 
-        // Produce Domain Classes
-        AmbienDomain ad = new AmbienDomain(params, partitionCols, clusteringCols, regularCols, cr);
-        if(!ad.produceDomainClasses()) {
-            System.err.println("Had trouble producing domain classes");
-            return cleanup(false);
+        List<String> restList = new ArrayList<String>();
+        Metadata m = cluster.getMetadata();
+        CodecRegistry cr = cluster.getConfiguration().getCodecRegistry();
+        for (int idx = 0; idx < params.keyspace_name.size(); idx++) {
+            // Get Metadata for Table
+            String ksname = params.keyspace_name.get(idx);
+            String tblname = params.table_name.get(idx);
+            KeyspaceMetadata km = m.getKeyspace(ksname);
+            if (null == km) {
+                System.err.println("Keyspace " + ksname + " not found");
+                return cleanup(false);
+            }
+            TableMetadata tm = km.getTable(tblname);
+            if (null == tm) {
+                System.err.println("Table " + tblname + " not found");
+                return cleanup(false);
+            }
+            List<ColumnMetadata> clusteringCols = tm.getClusteringColumns();
+            List<ColumnMetadata> partitionCols = tm.getPartitionKey();
+            List<ColumnMetadata> regularCols = tm.getColumns();
+            regularCols.removeAll(clusteringCols);
+            regularCols.removeAll(partitionCols);
+
+            // Produce Domain Classes
+            AmbienDomain ad = new AmbienDomain(ksname, tblname, partitionCols, clusteringCols, regularCols, cr, params.srcDomainDir, params);
+            if (!ad.produceDomainClasses()) {
+                System.err.println("Had trouble producing domain classes");
+                return cleanup(false);
+            }
+
+            // Produce Repository Classes
+            AmbienRepository ar = new AmbienRepository(ksname, tblname, params, partitionCols, clusteringCols, regularCols, cr, restList);
+            if (!ar.produceRepositoryClasses()) {
+                System.err.println("Had trouble producing repository and controller classes");
+                return cleanup(false);
+            }
         }
 
-        // Produce Repository Classes
-        AmbienRepository ar = new AmbienRepository(params, partitionCols, clusteringCols, regularCols, cr);
-        if(!ar.produceRepositoryClasses()) {
-            System.err.println("Had trouble producing repository and controller classes");
-            return cleanup(false);
-        }
+        // Produce Index and Error pages
+        if (!producePage("<h1>Welcome!</h1>\n<h2>This API brought to you by <i>Vested Interests</i></h2>\n",
+                params.resourcesTemplatesDir + File.separator + "index.html", restList)) return false;
+        if (!producePage("<h1>&#x1F627 Something went wrong...</h1>\n\n",
+                params.resourcesTemplatesDir + File.separator + "error.html", restList)) return false;
 
         cleanup();
         return true;
@@ -195,6 +208,7 @@ public class Ambien {
             if (!tfile.createNewFile()) return false;
         } catch (IOException e) {
             System.err.println("Could not create file (" + path + ")");
+            e.printStackTrace();
             return false;
         }
 
@@ -211,6 +225,28 @@ public class Ambien {
 
     public static String capName(String s) {
         return s.substring(0,1).toUpperCase() + s.substring(1);
+    }
+
+    private String restList(List<String> restEndpoints) {
+        StringBuilder sb = new StringBuilder("<ul>\n");
+        for (String s : restEndpoints) {
+            sb.append("<li>" + s + "</li>\n");
+        }
+        sb.append("</ul>\n");
+        return sb.toString();
+    }
+
+    private boolean producePage(String note, String fname, List<String> restList) {
+        String page = "<!DOCTYPE html>\n" +
+                "<html>\n" +
+                "<body>\n" +
+                note +
+                "<h2>These are the supported REST endpoints</h2>\n" +
+                restList(restList) +
+                "<p><a href=\"/actuator/\">The Actuator</a></p>\n" +
+                "</body>\n" +
+                "</html>\n";
+        return Ambien.writeFile(fname, page);
     }
 }
 

@@ -15,7 +15,7 @@ public class AmbienBoilerplate {
     public AmbienBoilerplate(AmbienParams params) {
         this.params = params;
         this.host = params.host;
-        this.keyspace = params.keyspace_name;
+        this.keyspace = params.keyspace_name.get(0);
         this.output_dir = params.output_dir;
         this.hessianTypeparserDir = params.output_dir + File.separator + "repo" + File.separator + "hessian" + File.separator + "typeparser" + File.separator + "0.1";
     }
@@ -34,6 +34,13 @@ public class AmbienBoilerplate {
     }
 
     private   boolean makeDirectoryStructure() {
+        if (!createDirectory(params.srcDomainDir)) return false;
+        if (!createDirectory(hessianTypeparserDir)) return false;
+        if (!createDirectory(params.srcRepositoryDir)) return false;
+        if (!createDirectory(params.srcControllerDir)) return false;
+        if (!createDirectory(params.resourcesTemplatesDir)) return false;
+
+        /*
         if (!createDirectory(params.srcMainJavaHessianAmbienDomainDir)) return false;
         if (!createDirectory(hessianTypeparserDir)) return false;
         if (!createDirectory(params.srcMainJavaHessianAmbienRepositoryDir)) return false;
@@ -41,7 +48,7 @@ public class AmbienBoilerplate {
         if (!createDirectory(params.srcMainResourcesDir)) return false;
         //if (!createDirectory(params.srcMainResourcesStaticDir)) return false;
         if (!createDirectory(params.srcMainResourcesTemplatesDir)) return false;
-
+        */
         return true;
     }
 
@@ -181,7 +188,7 @@ public class AmbienBoilerplate {
                 "spring.application.name=Ambien\n" +
                 "server.port=" + params.httpPort + "\n" +
                 "\n" +
-                "springdata.basepackage=hessian.ambien.domain;\n" +
+                "springdata.basepackage=" + params.package_name + ".domain;\n" +
                 "management.endpoints.web.exposure.include=*\n" +
                 "management.endpoint.health.show-details=always\n\n";
         if ((null != params.keystorePwd) || (null != params.truststorePwd)) {
@@ -194,11 +201,11 @@ public class AmbienBoilerplate {
             }
         }
 
-        return Ambien.writeFile(params.srcMainResourcesDir + File.separator + "application.properties", contents);
+        return Ambien.writeFile(params.resourcesDir + File.separator + "application.properties", contents);
     }
 
     private boolean makeApplication() {
-        String contents = "package hessian.ambien;\n" +
+        String contents = "package " + params.package_name + ";\n" +
                 "\n" +
                 "import org.springframework.boot.SpringApplication;\n" +
                 "import org.springframework.boot.autoconfigure.SpringBootApplication;\n" +
@@ -217,11 +224,11 @@ public class AmbienBoilerplate {
                 "\t}\n" +
                 "}\n";
 
-        return Ambien.writeFile(params.srcMainJavaHessianAmbienDir + File.separator + "AmbienApplication.java", contents);
+        return Ambien.writeFile(params.javaSrcDir + File.separator + "AmbienApplication.java", contents);
     }
 
     private boolean makeConfiguration() {
-        String contents = "package hessian.ambien;\n" +
+        String contents = "package " + params.package_name + ";\n" +
                 "\n" +
                 "import org.springframework.beans.factory.annotation.Value;\n" +
                 "import org.springframework.context.annotation.Bean;\n" +
@@ -264,8 +271,8 @@ public class AmbienBoilerplate {
                 "        return port;\n" +
                 "    }\n" +
                 "\n" +
-                ((null == params.truststorePath) ? "" : "    public String truststorePath = " + params.srcMainResourcesDir + File.separator + "truststore" + ";\n\n") +
-                ((null == params.keystorePath) ? "" : "    public String keystorePath = " + params.srcMainResourcesDir + File.separator + "keystore" + ";\n\n") +
+                ((null == params.truststorePath) ? "" : "    public String truststorePath = " + params.resourcesDir + File.separator + "truststore" + ";\n\n") +
+                ((null == params.keystorePath) ? "" : "    public String keystorePath = " + params.resourcesDir + File.separator + "keystore" + ";\n\n") +
                 ((null == params.username) ? "" : "    @Value(\"${dse.username}\")\n    public String username;\n\n") +
                 ((null == params.password) ? "" : "    @Value(\"${dse.password}\")\n    public String password;\n\n") +
                 ((null == params.truststorePwd) ? "" : "    @Value(\"${dse.truststorePwd}\")\n    public String truststorePwd;\n\n") +
@@ -327,13 +334,13 @@ public class AmbienBoilerplate {
                 "    }"+
                 "}\n";
 
-        return Ambien.writeFile(params.srcMainJavaHessianAmbienDir + File.separator + "AmbienConfiguration.java", contents);
+        return Ambien.writeFile(params.javaSrcDir + File.separator + "AmbienConfiguration.java", contents);
     }
 
     private boolean addKeystore() {
         if (null == params.keystorePath) return true;
         try {
-            Files.copy(Paths.get(params.keystorePath), Paths.get(params.srcMainResourcesDir + File.separator + "keystore"));
+            Files.copy(Paths.get(params.keystorePath), Paths.get(params.resourcesDir + File.separator + "keystore"));
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -345,7 +352,7 @@ public class AmbienBoilerplate {
     private boolean addTruststore() {
         if (null == params.truststorePath) return true;
         try {
-            Files.copy(Paths.get(params.truststorePath), Paths.get(params.srcMainResourcesDir + File.separator + "truststore"));
+            Files.copy(Paths.get(params.truststorePath), Paths.get(params.resourcesDir + File.separator + "truststore"));
         }
         catch (Exception e) {
             e.printStackTrace();

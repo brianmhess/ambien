@@ -13,8 +13,10 @@ import java.util.stream.Stream;
 
 public class AmbienRepository {
     private AmbienParams params;
-    private String name;
+    private String table_name;
+    private String keyspace_name;
     private String cap_name;
+    private String camel_name;
     private CodecRegistry cr;
     private List<ColumnMetadata> partitionCols;
     private List<ColumnMetadata> clusteringCols;
@@ -24,35 +26,35 @@ public class AmbienRepository {
     private String[] ineq = {"lt", "lte", "gt", "gte"};
     private List<String> bases;
     private List<String> restEndpoints;
-    String endpointPrefix;
+    private String endpointPrefix;
 
 
-    public AmbienRepository(AmbienParams params, List<ColumnMetadata> partitionCols, List<ColumnMetadata> clusteringCols,
-                            List<ColumnMetadata> regularCols, CodecRegistry cr) {
-        this(params, partitionCols, clusteringCols, regularCols, cr, false);
+    public AmbienRepository(String keyspace_name, String table_name, AmbienParams params,
+                            List<ColumnMetadata> partitionCols, List<ColumnMetadata> clusteringCols,
+                            List<ColumnMetadata> regularCols, CodecRegistry cr, List<String> restEndpoints) {
+        this(keyspace_name, table_name, params, partitionCols, clusteringCols, regularCols, cr, false, restEndpoints);
     }
 
-    public AmbienRepository(AmbienParams params, List<ColumnMetadata> partitionCols, List<ColumnMetadata> clusteringCols,
-                            List<ColumnMetadata> regularCols, CodecRegistry cr, boolean allowAllowFiltering) {
+    public AmbienRepository(String keyspace_name, String table_name, AmbienParams params,
+                            List<ColumnMetadata> partitionCols, List<ColumnMetadata> clusteringCols,
+                            List<ColumnMetadata> regularCols, CodecRegistry cr, boolean allowAllowFiltering, List<String> restEndpoints) {
         this.params = params;
         this.partitionCols = partitionCols;
         this.clusteringCols = clusteringCols;
         this.regularCols = regularCols;
         this.cr = cr;
         this.allowAllowFiltering = allowAllowFiltering;
-        this.name = params.table_name;
-        this.cap_name = Ambien.capName(params.table_name);
-        queryBuilderBase = "QueryBuilder.select().all().from(\"" + params.keyspace_name + "\", \"" + params.table_name + "\")";
+        this.table_name = table_name;
+        this.keyspace_name = keyspace_name;
+        this.cap_name = Ambien.capName(keyspace_name) + Ambien.capName(table_name);
+        this.camel_name = keyspace_name + Ambien.capName(table_name);
+        queryBuilderBase = "QueryBuilder.select().all().from(\"" + keyspace_name + "\", \"" + table_name + "\")";
         bases = new ArrayList<>();
-        restEndpoints = new ArrayList<>();
+        this.restEndpoints = restEndpoints;
     }
 
     public boolean produceRepositoryClasses() {
         if (!produceBaseRepositoryClass()) return false;
-        if (!producePage("<h1>Welcome!</h1>\n<h2>This API brought to you by <i>Vested Interests</i></h2>\n",
-                params.srcMainResourcesTemplatesDir + File.separator + "index.html")) return false;
-        if (!producePage("<h1>&#x1F627 Something went wrong...</h1>\n\n",
-                params.srcMainResourcesTemplatesDir + File.separator + "error.html")) return false;
 
         return true;
     }
@@ -75,8 +77,7 @@ public class AmbienRepository {
         sbr.append("\t\treturn x;\n");
         sbr.append("\t}\n\n");
 
-        //endpointPrefix = "api/" + params.keyspace_name + "/" + params.table_name + "/";
-        endpointPrefix = params.endpointRoot + "/";
+        endpointPrefix = params.endpointRoot(keyspace_name, table_name) + "/";
         String endpoint = endpointPrefix + "add";
         restEndpoints.add(endpoint);
         sbc.append("\t// Add new\n");
@@ -90,7 +91,7 @@ public class AmbienRepository {
         for (i = 0; i < regularCols.size(); i++)
             sbc.append(", @RequestParam(required = false) String " + regularCols.get(i).getName());
         sbc.append(") throws ParseException {\n");
-        sbc.append("\t\t" + cap_name + " " + name + " = new " + cap_name + "(anyParser.parse(" + partitionCols.get(0).getName() + ", " + typeFor(partitionCols.get(0)) + ".class)");
+        sbc.append("\t\t" + cap_name + " " + camel_name + " = new " + cap_name + "(anyParser.parse(" + partitionCols.get(0).getName() + ", " + typeFor(partitionCols.get(0)) + ".class)");
         for (i = 1; i < partitionCols.size(); i++)
             sbc.append(", anyParser.parse(" + partitionCols.get(i).getName() + ", " + typeFor(partitionCols.get(i)) + ".class)");
         for (i = 0; i < clusteringCols.size(); i++)
@@ -98,8 +99,8 @@ public class AmbienRepository {
         for (i = 0; i < regularCols.size(); i++)
             sbc.append(", anyParser.parse(" + regularCols.get(i).getName() + ", " + typeFor(regularCols.get(i)) + ".class)");
         sbc.append(");\n");
-        sbc.append("\t\t" + name + "Repository.save(" + name + ");\n");
-        sbc.append("\t\treturn " + name + ";\n");
+        sbc.append("\t\t" + camel_name + "Repository.save(" + camel_name + ");\n");
+        sbc.append("\t\treturn " + camel_name + ";\n");
         sbc.append("\t}\n\n");
 
         // Delete
@@ -130,7 +131,7 @@ public class AmbienRepository {
         for (i = 0; i < clusteringCols.size(); i++)
             sbc.append(", @RequestParam String " + clusteringCols.get(i).getName());
         sbc.append(") throws ParseException {\n");
-        sbc.append("\t\t" + name + "Repository.delete(");
+        sbc.append("\t\t" + camel_name + "Repository.delete(");
         sbc.append("anyParser.parse(" + partitionCols.get(0).getName() + ", " + typeFor(partitionCols.get(0)) + ".class)");
         for (i = 1; i < partitionCols.size(); i++)
             sbc.append(", anyParser.parse(" + partitionCols.get(i).getName() + ", " + typeFor(partitionCols.get(i)) + ".class)");
@@ -168,7 +169,7 @@ public class AmbienRepository {
         restEndpoints.add(endpoint);
         sbc.append("\t// Find all\n");
         sbc.append("\t@RequestMapping(\"" + endpoint + "\")\n\tpublic List<" + cap_name + "> all() {\n");
-        sbc.append("\t\treturn (ArrayList<" + cap_name + ">)" + name + "Repository.findAll();\n\t}\n\n");
+        sbc.append("\t\treturn (ArrayList<" + cap_name + ">)" + camel_name + "Repository.findAll();\n\t}\n\n");
 
         // Find Some
         base = "findSome";
@@ -187,10 +188,10 @@ public class AmbienRepository {
         sbc.append("\t// Find Some\n");
         restEndpoints.add(endpoint + "/{some}");
         sbc.append("\t@RequestMapping(\"" + endpoint + "/{some}\")\n\tpublic List<" + cap_name + "> someGet(@PathVariable int some) {\n");
-        sbc.append("\t\treturn (ArrayList<" + cap_name + ">)" + name + "Repository.findSome(some);\n\t}\n\n");
+        sbc.append("\t\treturn (ArrayList<" + cap_name + ">)" + camel_name + "Repository.findSome(some);\n\t}\n\n");
         restEndpoints.add(endpoint + "?some={some}");
         sbc.append("\t@RequestMapping(value = \"" + endpoint + "\", method = {RequestMethod.POST, RequestMethod.GET})\n\tpublic List<" + cap_name + "> somePost(@RequestParam int some) {\n");
-        sbc.append("\t\treturn (ArrayList<" + cap_name + ">)" + name + "Repository.findSome(some);\n\t}\n\n");
+        sbc.append("\t\treturn (ArrayList<" + cap_name + ">)" + camel_name + "Repository.findSome(some);\n\t}\n\n");
 
 
         // Find By Partition Key
@@ -262,15 +263,15 @@ public class AmbienRepository {
         sbr.append("}\n");
         sbc.append("}\n");
 
-        String fnamer = params.srcMainJavaHessianAmbienRepositoryDir + File.separator + cap_name + "Repository.java";
-        String fnamec = params.srcMainJavaHessianAmbienControllerDir + File.separator + Ambien.capName(name) + "RestController.java";
+        String fnamer = params.srcRepositoryDir + File.separator + cap_name + "Repository.java";
+        String fnamec = params.srcControllerDir + File.separator + cap_name + "RestController.java";
         return Ambien.writeFile(fnamer, sbr.toString()) && Ambien.writeFile(fnamec, sbc.toString());
     }
 
     private void genRepositoryHeader(StringBuilder sbr) {
-        sbr.append("package hessian.ambien.repository;\n" +
+        sbr.append("package " + params.package_name + ".repository;\n" +
                 "\n" +
-                "import hessian.ambien.domain." + cap_name + ";\n" +
+                "import " + params.package_name + ".domain." + cap_name + ";\n" +
                 "\n" +
                 "import com.datastax.driver.core.BoundStatement;\n" +
                 "import com.datastax.driver.core.Session;\n" +
@@ -304,10 +305,10 @@ public class AmbienRepository {
     }
 
     private void genControllerHeader(StringBuilder sbc) {
-        sbc.append("package hessian.ambien.controller;\n" +
+        sbc.append("package " + params.package_name + ".controller;\n" +
                 "\n" +
-                "import hessian.ambien.domain." + cap_name + ";\n" +
-                "import hessian.ambien.repository." + cap_name + "Repository;\n" +
+                "import " + params.package_name + ".domain." + cap_name + ";\n" +
+                "import " + params.package_name + ".repository." + cap_name + "Repository;\n" +
                 "import hessian.typeparser.AnyParser;\n" +
                 "import org.springframework.beans.factory.annotation.Autowired;\n" +
                 "import org.springframework.web.bind.annotation.*;\n" +
@@ -318,11 +319,11 @@ public class AmbienRepository {
                 "\n" +
                 "@RestController\n" +
                 "public class " + cap_name + "RestController {\n");
-        sbc.append("\t@Autowired\n\tprivate " + cap_name + "Repository " + name + "Repository;\n\n");
+        sbc.append("\t@Autowired\n\tprivate " + cap_name + "Repository " + camel_name + "Repository;\n\n");
         sbc.append("\tprivate AnyParser anyParser = new AnyParser();\n\n");
 
         // Hello
-        sbc.append("\t@RequestMapping(\"api/hello\")\n" +
+        sbc.append("\t@RequestMapping(\"" + params.endpointRoot(keyspace_name,table_name) + "/hello\")\n" +
                 "\tpublic String hello() {\n" +
                 "\t\treturn \"<html><body><H1>Hello World</H1></body></html>\";\n" +
                 "\t}\n\n");
@@ -395,7 +396,7 @@ public class AmbienRepository {
             sbc.append(", " + varPrefix + " String " + cols.get(i).getKey());
         }
         sbc.append(") throws ParseException  {\n");
-        sbc.append("\t\treturn (ArrayList<" + cap_name + ">)" + name + "Repository." + base + "(");
+        sbc.append("\t\treturn (ArrayList<" + cap_name + ">)" + camel_name + "Repository." + base + "(");
         sbc.append("anyParser.parse(" + cols.get(0).getKey() + ", " + cols.get(0).getValue() + ".class)");
         for (int i = 1; i < cols.size(); i++) {
             sbc.append(", anyParser.parse(" + cols.get(i).getKey() + ", " + cols.get(i).getValue() + ".class)");
@@ -439,28 +440,5 @@ public class AmbienRepository {
                         jpath, jpathvars, true);
             }
         }
-    }
-
-    private String restList() {
-        StringBuilder sb = new StringBuilder("<ul>\n");
-        for (String s : restEndpoints) {
-            sb.append("<li>" + s + "</li>\n");
-        }
-        sb.append("</ul>\n");
-        return sb.toString();
-    }
-
-    private boolean producePage(String note, String fname) {
-        String page = "<!DOCTYPE html>\n" +
-                "<html>\n" +
-                "<body>\n" +
-                note +
-                "<h2>These are the supported REST endpoints</h2>\n" +
-                restList() +
-                "<p><a href=\"/api/some?some=10\">Show me <i>some</i></a></p>\n" +
-                "<p><a href=\"/actuator/\">The Actuator</a></p>\n" +
-                "</body>\n" +
-                "</html>\n";
-        return Ambien.writeFile(fname, page);
     }
 }
