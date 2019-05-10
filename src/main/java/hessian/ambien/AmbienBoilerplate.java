@@ -63,13 +63,18 @@ public class AmbienBoilerplate {
     }
 
     private boolean makePomXml() {
+        String[] elems = params.package_name.split("\\.");
+        StringBuilder groupId = new StringBuilder(elems[0]);
+        for (int i = 1; i < elems.length - 1; i++)
+            groupId.append("." + elems[i]);
+        String artifactId = elems[elems.length - 1];
         String contents = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<project xmlns=\"http://maven.apache.org/POM/4.0.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
                 "\txsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\">\n" +
                 "\t<modelVersion>4.0.0</modelVersion>\n" +
                 "\n" +
-                "\t<groupId>hessian</groupId>\n" +
-                "\t<artifactId>ambien</artifactId>\n" +
+                "\t<groupId>" + groupId.toString() + "</groupId>\n" +
+                "\t<artifactId>" + artifactId + "</artifactId>\n" +
                 "\t<version>0.0.1-SNAPSHOT</version>\n" +
                 "\t<packaging>jar</packaging>\n" +
                 "\n" +
