@@ -1,7 +1,7 @@
 package hessian.ambien;
 
-import com.datastax.driver.core.CodecRegistry;
-import com.datastax.driver.core.ColumnMetadata;
+import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
+import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
 import javafx.util.Pair;
 
 import java.io.File;
@@ -11,7 +11,7 @@ import java.util.List;
 public class AmbienDomain {
     private String tableName = null;
     private String keyspaceName = null;
-    private String className = null;
+    private String cap_name = null;
     private CodecRegistry cr = null;
     private List<ColumnMetadata> partitionCols = null;
     private List<ColumnMetadata> clusteringCols = null;
@@ -24,7 +24,7 @@ public class AmbienDomain {
                         String outputDir, AmbienParams params) {
         this.tableName = tableName;
         this.keyspaceName = keyspaceName;
-        this.className = Ambien.capName(keyspaceName) + Ambien.capName(tableName);
+        this.cap_name = Ambien.capName(keyspaceName) + Ambien.capName(tableName);
         this.partitionCols = partitionCols;
         this.clusteringCols = clusteringCols;
         this.regularCols = regularCols;
@@ -34,52 +34,54 @@ public class AmbienDomain {
     }
 
     public boolean produceDomainClasses() {
-        if(!produceClass()) return false;
-
-        return true;
+        return (!produceClass());
     }
 
     private boolean produceClass() {
         StringBuilder sb = new StringBuilder();
         sb.append("package " + params.package_name + ".domain;\n" +
                 "\n" +
-                "import com.datastax.driver.mapping.annotations.Column;\n" +
-                "import com.datastax.driver.mapping.annotations.PartitionKey;\n" +
-                "import com.datastax.driver.mapping.annotations.ClusteringColumn;\n" +
-                "import com.datastax.driver.mapping.annotations.Table;\n" +
+                "import com.datastax.oss.driver.api.mapper.annotations.ClusteringColumn;\n" +
+                "import com.datastax.oss.driver.api.mapper.annotations.Entity;\n" +
+                "import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;\n" +
+                "import hessian.typeparser.AnyParser;\n" +
                 "\n" +
-                "@Table(name=\"" + tableName + "\", keyspace = \"" + keyspaceName + "\")\n");
-        sb.append("public class " + className + " {\n\n");
+                "import java.text.ParseException;\n" +
+                "import java.time.Instant;\n" +
+                "import java.util.Objects;\n" +
+                "\n" +
+                "@Entity\n");
+        sb.append("public class " + cap_name + " {\n\n");
 
         List<Pair<String,String>> cols = new ArrayList<Pair<String,String>>(partitionCols.size() + clusteringCols.size() + regularCols.size());
 
         // Partition Keys
         for (int i = 0; i < partitionCols.size(); i++) {
-            String name = partitionCols.get(i).getName();
+            String name = partitionCols.get(i).getName().asInternal();
             String type = cr.codecFor(partitionCols.get(i).getType()).getJavaType().getRawType().getName();
-            sb.append("\t@PartitionKey(" + i + ")\n\t@Column\n\tprivate " + type + " " + name + ";\n\n");
+            sb.append("\t@PartitionKey(" + i + ")\n\tprivate " + type + " " + name + ";\n\n");
             cols.add(new Pair<String,String>(name, type));
         }
 
         // Clustering Columns
         for (int i = 0; i < clusteringCols.size(); i++) {
-            String name = clusteringCols.get(i).getName();
+            String name = clusteringCols.get(i).getName().asInternal();
             String type = cr.codecFor(clusteringCols.get(i).getType()).getJavaType().getRawType().getName();
-            sb.append("\t@ClusteringColumn(" + i + ")\n\t@Column\n\t private " + type + " " + name + ";\n\n");
+            sb.append("\t@ClusteringColumn(" + i + ")\n\t private " + type + " " + name + ";\n\n");
             cols.add(new Pair<String,String>(name, type));
         }
 
         // Columns
         for (int i = 0; i < regularCols.size(); i++) {
-            String name = regularCols.get(i).getName();
+            String name = regularCols.get(i).getName().asInternal();
             String type = cr.codecFor(regularCols.get(i).getType()).getJavaType().getRawType().getName();
-            sb.append("\t@Column\n\tprivate " + type + " " + name + ";\n\n");
+            sb.append("\tprivate " + type + " " + name + ";\n\n");
             cols.add(new Pair<String,String>(name, type));
         }
 
         // Contructor
-        sb.append("\tpublic " + className + "() { }\n\n");
-        sb.append("\tpublic " + className + "(");
+        sb.append("\tpublic " + cap_name + "() { }\n\n");
+        sb.append("\tpublic " + cap_name + "(");
         sb.append(cols.get(0).getValue() + " " + cols.get(0).getKey());
         for (int i = 1; i < cols.size(); i++) {
             sb.append(", " + cols.get(i).getValue() + " " + cols.get(i).getKey());
@@ -107,7 +109,7 @@ public class AmbienDomain {
 
         // toString
         sb.append("\t@Override\n\tpublic String toString() {\n");
-        sb.append("\t\treturn \"" + className + "{\" +\n");
+        sb.append("\t\treturn \"" + cap_name + "{\" +\n");
         sb.append("\t\t\t\"" + cols.get(0).getKey() + "='\" + " + cols.get(0).getKey() + " + \"'\" +\n");
         for (int i = 1; i < cols.size(); i++) {
             sb.append("\t\t\t\", " + cols.get(i).getKey() + "='\" + " + cols.get(i).getKey() + " + \"'\" +\n");
@@ -119,7 +121,7 @@ public class AmbienDomain {
 
 
         // save file
-        String fname = outputDir + File.separator + className + ".java";
+        String fname = outputDir + File.separator + cap_name + ".java";
 
         return Ambien.writeFile(fname, sb.toString());
     }

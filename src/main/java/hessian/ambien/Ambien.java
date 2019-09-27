@@ -15,26 +15,31 @@
  */
 package hessian.ambien;
 
-import com.datastax.driver.core.*;
-import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
-import com.datastax.driver.core.policies.TokenAwarePolicy;
 
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.CqlSessionBuilder;
+import com.datastax.oss.driver.api.core.metadata.Metadata;
+import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
+import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
+import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
+import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.*;
+import java.net.InetSocketAddress;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Ambien {
-    private String version = "0.0.1";
+    private String version = "0.1.1";
     private AmbienParams params = new AmbienParams();
 
-    private Cluster cluster = null;
-    private Session session = null;
+    private CqlSession session = null;
 
     private String cqlSchema = null;
     private String filename = null;
@@ -46,7 +51,7 @@ public class Ambien {
         return usage.toString();
     }
 
-    private SSLOptions createSSLOptions()
+    private SSLContext createSSLOptions()
         throws KeyStoreException, FileNotFoundException, IOException, NoSuchAlgorithmException,
             KeyManagementException, CertificateException, UnrecoverableKeyException {
         TrustManagerFactory tmf = null;
@@ -72,27 +77,22 @@ public class Ambien {
                         tmf != null ? tmf.getTrustManagers() : null,
                         new SecureRandom());
 
-        return RemoteEndpointAwareJdkSSLOptions.builder().withSSLContext(sslContext).build();
+        return sslContext;
     }
 
     private void setup()
         throws IOException, KeyStoreException, NoSuchAlgorithmException, KeyManagementException,
                CertificateException, UnrecoverableKeyException  {
         // Connect to Cassandra
-        Cluster.Builder clusterBuilder = Cluster.builder()
-            .addContactPoint(params.host)
-            .withPort(params.port)
-            .withLoadBalancingPolicy(new TokenAwarePolicy( DCAwareRoundRobinPolicy.builder().build()));
+        CqlSessionBuilder builder = CqlSession.builder()
+                .addContactPoint(InetSocketAddress.createUnresolved(params.host, params.port))
+                .withLocalDatacenter(params.dataCenter);
         if (null != params.username)
-            clusterBuilder = clusterBuilder.withCredentials(params.username, params.password);
+            builder = builder.withAuthCredentials(params.username, params.password);
         if (null != params.truststorePath)
-            clusterBuilder = clusterBuilder.withSSL(createSSLOptions());
+            builder = builder.withSslContext(createSSLOptions());
 
-        cluster = clusterBuilder.build();
-        if (null == cluster) {
-            throw new IOException("Could not create cluster");
-        }
-        session = cluster.connect();
+        session = builder.build();
     }
 
     private boolean cleanup(boolean retval) {
@@ -103,10 +103,8 @@ public class Ambien {
     private void cleanup() {
         if (null != session)
             session.close();
-        if (null != cluster)
-            cluster.close();
     }
-    
+
     private boolean run(String[] args)
         throws IOException, KeyStoreException, NoSuchAlgorithmException, KeyManagementException,
                CertificateException, UnrecoverableKeyException {
@@ -136,28 +134,36 @@ public class Ambien {
             return cleanup(false);
         }
 
+        // Produce Configuration
+        AmbienConfiguration ac = new AmbienConfiguration(params);
+        if (!ac.produceConfiguration()) {
+            System.err.println("Had trouble producing configuration");
+            return cleanup(false);
+        }
+
         List<String> restList = new ArrayList<String>();
-        Metadata m = cluster.getMetadata();
-        CodecRegistry cr = cluster.getConfiguration().getCodecRegistry();
+        Metadata m = session.getMetadata();
+        CodecRegistry cr = session.getContext().getCodecRegistry();
         for (int idx = 0; idx < params.keyspace_name.size(); idx++) {
             // Get Metadata for Table
             String ksname = params.keyspace_name.get(idx);
             String tblname = params.table_name.get(idx);
-            KeyspaceMetadata km = m.getKeyspace(ksname);
+            KeyspaceMetadata km = m.getKeyspace(ksname).orElse(null);
             if (null == km) {
                 System.err.println("Keyspace " + ksname + " not found");
                 return cleanup(false);
             }
-            TableMetadata tm = km.getTable(tblname);
+            TableMetadata tm = km.getTable(tblname).orElse(null);
             if (null == tm) {
                 System.err.println("Table " + tblname + " not found");
                 return cleanup(false);
             }
-            List<ColumnMetadata> clusteringCols = tm.getClusteringColumns();
+            List<ColumnMetadata> clusteringCols = tm.getClusteringColumns().keySet().stream().collect(Collectors.toList());
             List<ColumnMetadata> partitionCols = tm.getPartitionKey();
-            List<ColumnMetadata> regularCols = tm.getColumns();
+            List<ColumnMetadata> regularCols = tm.getColumns().values().stream().collect(Collectors.toList());
             regularCols.removeAll(clusteringCols);
             regularCols.removeAll(partitionCols);
+
 
             // Produce Domain Classes
             AmbienDomain ad = new AmbienDomain(ksname, tblname, partitionCols, clusteringCols, regularCols, cr, params.srcDomainDir, params);
@@ -230,7 +236,7 @@ public class Ambien {
     private String restList(List<String> restEndpoints) {
         StringBuilder sb = new StringBuilder("<ul>\n");
         for (String s : restEndpoints) {
-            sb.append("<li>" + s + "</li>\n");
+            sb.append("<li><a href=\"" + s + "\">" + s + "</a></li>\n");
         }
         sb.append("</ul>\n");
         return sb.toString();

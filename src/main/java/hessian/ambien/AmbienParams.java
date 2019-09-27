@@ -6,6 +6,7 @@ import java.util.*;
 public class AmbienParams {
     public String host = null;
     public int port = 9042;
+    public String dataCenter = "dc1";
     public String username = null;
     public String password = null;
     public String truststorePath = null;
@@ -31,7 +32,8 @@ public class AmbienParams {
         StringBuilder usage = new StringBuilder();
         usage.append("OPTIONS:\n");
         usage.append("  -host <hostname>               Contact point for DSE [required]\n");
-        usage.append("  -kt <keyspace.table>           Keyspace and Table to use, can be a comma-separated list [required]");
+        usage.append("  -dc <dataCenter>               Data center to connect to [dc1]\n");
+        usage.append("  -kt <keyspace.table>           Keyspace and Table to use, can be a comma-separated list [required]\n");
         usage.append("  -o <outputDir>                 Directory to write to (must be empty) [required]\n");
         usage.append("  -configFile <filename>         File with configuration options [none]\n");
         usage.append("  -port <portNumber>             CQL Port Number [9042]\n");
@@ -127,6 +129,7 @@ public class AmbienParams {
         }
 
         if (null != (tkey = amap.remove("-port")))          port = Integer.parseInt(tkey);
+        if (null != (tkey = amap.remove("-dc")))            dataCenter = tkey;
         if (null != (tkey = amap.remove("-user")))          username = tkey;
         if (null != (tkey = amap.remove("-pw")))            password = tkey;
         if (null != (tkey = amap.remove("-ssl-truststore-path"))) truststorePath = tkey;
@@ -168,7 +171,7 @@ public class AmbienParams {
         String pkgPath = pathify(package_name.split("\\."));
         javaSrcDir = makePath(output_dir, "src", "main", "java", pkgPath);
         srcDomainDir = makePath(output_dir, "src", "main", "java", pkgPath, "domain");
-        srcRepositoryDir = makePath(output_dir, "src", "main", "java", pkgPath, "repository");
+        srcRepositoryDir = makePath(output_dir, "src", "main", "java", pkgPath, "dao");
         srcControllerDir = makePath(output_dir, "src", "main", "java", pkgPath, "controller");
 
     }
@@ -203,6 +206,7 @@ public class AmbienParams {
         return "AmbienParams{" +
                 "host='" + host + '\'' +
                 ", port=" + port +
+                ", dc='" + dataCenter + '\'' +
                 ", username='" + username + '\'' +
                 ", password='" + password + '\'' +
                 ", truststorePath='" + truststorePath + '\'' +
