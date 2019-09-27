@@ -9,11 +9,13 @@ It gives you rest...
 
 ## Usage:
 ```
-version: 0.0.1
+version: 0.1.1
 Usage: ambien -host <hostname> -k <keyspaceName> -t <tableName> -o <outputDir> [options]
 OPTIONS:
   -host <hostname>               Contact point for DSE [required]
-  -kt <keyspace.table>           Keyspace and Table to use, can be a comma-separated list [required]  -o <outputDir>                 Directory to write to (must be empty) [required]
+  -dc <dataCenter>               Data center to connect to [dc1]
+  -kt <keyspace.table>           Keyspace and Table to use, can be a comma-separated list [required]
+  -o <outputDir>                 Directory to write to (must be empty) [required]
   -configFile <filename>         File with configuration options [none]
   -port <portNumber>             CQL Port Number [9042]
   -user <username>               Cassandra username [none]
@@ -34,7 +36,7 @@ After running Ambien, change directory to the output directory and run:
 
 And then start the service with:
 
-`java -jar target/ambien-0.0.1-SNAPSHOT.jar`
+`java -jar target/package-0.0.1-SNAPSHOT.jar`
 
 ## Current API calls
 There is an index.html page which lists all the generated REST endpoints:
@@ -51,7 +53,7 @@ http://hostname:8222/api/all
 ```
 Select some rows (GET and POST):
 ``` 
-http://hostname:8222/api/some/?some={some}
+http://hostname:8222/api/some?some={some}
 ```
 Select by partition keys (GET and POST):
 ```
@@ -82,3 +84,8 @@ You can also access various metrics from the Actuator endpoints:
 ``` 
 http://hostname:8222/actuator
 ```
+There is a DSE HealthIndicator included, named AmbienHealthCheck:
+``` 
+http://hostname:8222/actuator/health
+```
+

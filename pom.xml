@@ -10,30 +10,32 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <dse.driver.version>1.7.0</dse.driver.version>
+        <dse-java-driver.version>2.2.0</dse-java-driver.version>
     </properties>
 
     <dependencies>
+        <!-- DSE -->
         <dependency>
             <groupId>com.datastax.dse</groupId>
             <artifactId>dse-java-driver-core</artifactId>
-            <version>${dse.driver.version}</version>
+            <version>${dse-java-driver.version}</version>
         </dependency>
         <dependency>
             <groupId>com.datastax.dse</groupId>
-            <artifactId>dse-java-driver-mapping</artifactId>
-            <version>${dse.driver.version}</version>
+            <artifactId>dse-java-driver-query-builder</artifactId>
+            <version>${dse-java-driver.version}</version>
         </dependency>
         <dependency>
             <groupId>com.datastax.dse</groupId>
-            <artifactId>dse-java-driver-extras</artifactId>
-            <version>${dse.driver.version}</version>
+            <artifactId>dse-java-driver-mapper-processor</artifactId>
+            <version>${dse-java-driver.version}</version>
         </dependency>
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.0.9</version>
+            <groupId>com.datastax.dse</groupId>
+            <artifactId>dse-java-driver-mapper-runtime</artifactId>
+            <version>${dse-java-driver.version}</version>
         </dependency>
+
     </dependencies>
 
     <build>
@@ -83,6 +85,24 @@
                     </execution>
                 </executions>
             </plugin>
-    </plugins>
+
+            <!-- for making ambien -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <executable>${project.basedir}/src/pkg/buildit.sh</executable>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>

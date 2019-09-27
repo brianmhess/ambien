@@ -4,6 +4,7 @@ import java.io.*;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.Files;
+import java.util.stream.Collectors;
 
 public class AmbienBoilerplate {
     private AmbienParams params = null;
@@ -21,35 +22,24 @@ public class AmbienBoilerplate {
     }
 
     public boolean produceBoilerplate() {
-        if (!makeDirectoryStructure()) return false;
-        if (!makePomXml()) return false;
-        if (!makeApplicationProperties()) return false;
-        if (!makeApplication()) return false;
-        if (!makeConfiguration()) return false;
-        if (!addKeystore()) return false;
-        if (!addTruststore()) return false;
-        if (!copyResources()) return false;
-
-        return true;
+        return (!makeDirectoryStructure())
+                && (!makePomXml())
+                && (!makeApplicationProperties())
+                && (!makeApplication())
+                && (!makeLastUpdatedStateListener())
+                && (!makeStateListeningHealthCheck())
+                && (!makeAmbienHealthCheck())
+                && (!addKeystore())
+                && (!addTruststore())
+                && (!copyResources());
     }
 
     private   boolean makeDirectoryStructure() {
-        if (!createDirectory(params.srcDomainDir)) return false;
-        if (!createDirectory(hessianTypeparserDir)) return false;
-        if (!createDirectory(params.srcRepositoryDir)) return false;
-        if (!createDirectory(params.srcControllerDir)) return false;
-        if (!createDirectory(params.resourcesTemplatesDir)) return false;
-
-        /*
-        if (!createDirectory(params.srcMainJavaHessianAmbienDomainDir)) return false;
-        if (!createDirectory(hessianTypeparserDir)) return false;
-        if (!createDirectory(params.srcMainJavaHessianAmbienRepositoryDir)) return false;
-        if (!createDirectory(params.srcMainJavaHessianAmbienControllerDir)) return false;
-        if (!createDirectory(params.srcMainResourcesDir)) return false;
-        //if (!createDirectory(params.srcMainResourcesStaticDir)) return false;
-        if (!createDirectory(params.srcMainResourcesTemplatesDir)) return false;
-        */
-        return true;
+        return (!createDirectory(params.srcDomainDir))
+                && (!createDirectory(hessianTypeparserDir))
+                && (!createDirectory(params.srcRepositoryDir))
+                && (!createDirectory(params.srcControllerDir))
+                && (!createDirectory(params.resourcesTemplatesDir));
     }
 
     private boolean createDirectory(String dir) {
@@ -78,19 +68,19 @@ public class AmbienBoilerplate {
                 "\t<version>0.0.1-SNAPSHOT</version>\n" +
                 "\t<packaging>jar</packaging>\n" +
                 "\n" +
-                "\t<name>ambien</name>\n" +
+                "\t<name>expensivest</name>\n" +
                 "\t<description>Demo project for Spring Boot</description>\n" +
                 "\n" +
                 "\t<parent>\n" +
                 "\t\t<groupId>org.springframework.boot</groupId>\n" +
                 "\t\t<artifactId>spring-boot-starter-parent</artifactId>\n" +
-                "\t\t<version>2.0.6.RELEASE</version>\n" +
+                "\t\t<version>2.1.4.RELEASE</version>\n" +
                 "\t\t<relativePath/> <!-- lookup parent from repository -->\n" +
                 "\t</parent>\n" +
                 "\n" +
                 "\t<properties>\n" +
                 "\t\t<!-- DSE -->\n" +
-                "\t\t<dse-java-driver.version>1.7.0</dse-java-driver.version>\n" +
+                "\t\t<dse-java-driver.version>2.2.0</dse-java-driver.version>\n" +
                 "\n" +
                 "\t\t<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>\n" +
                 "\t\t<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>\n" +
@@ -98,10 +88,23 @@ public class AmbienBoilerplate {
                 "\t\t<spring-data.version>2.0.7.RELEASE</spring-data.version>\n" +
                 "\t</properties>\n" +
                 "\n" +
+                "\t<dependencyManagement>\n" +
+                "\t\t<dependencies>\n" +
+                "\t\t\t<dependency>\n" +
+                "\t\t\t\t<groupId>io.projectreactor</groupId>\n" +
+                "\t\t\t\t<artifactId>reactor-bom</artifactId>\n" +
+                "\t\t\t\t<version>Bismuth-RELEASE</version>\n" +
+                "\t\t\t\t<type>pom</type>\n" +
+                "\t\t\t\t<scope>import</scope>\n" +
+                "\t\t\t</dependency>\n" +
+                "\t\t</dependencies>\n" +
+                "\t</dependencyManagement>\n" +
+                "\n" +
+                "\n" +
                 "\t<repositories>\n" +
                 "\t\t<repository>\n" +
-                "\t\t\t<id>data-local</id>\n" +
-                "\t\t\t<name>data</name>\n" +
+                "\t\t\t<id>1-data-local</id>\n" +
+                "\t\t\t<name>datat2</name>\n" +
                 "\t\t\t<url>file://${project.basedir}/repo</url>\n" +
                 "\t\t</repository>\n" +
                 "\t</repositories>\n" +
@@ -115,12 +118,17 @@ public class AmbienBoilerplate {
                 "\t\t</dependency>\n" +
                 "\t\t<dependency>\n" +
                 "\t\t\t<groupId>com.datastax.dse</groupId>\n" +
-                "\t\t\t<artifactId>dse-java-driver-mapping</artifactId>\n" +
+                "\t\t\t<artifactId>dse-java-driver-query-builder</artifactId>\n" +
                 "\t\t\t<version>${dse-java-driver.version}</version>\n" +
                 "\t\t</dependency>\n" +
                 "\t\t<dependency>\n" +
                 "\t\t\t<groupId>com.datastax.dse</groupId>\n" +
-                "\t\t\t<artifactId>dse-java-driver-extras</artifactId>\n" +
+                "\t\t\t<artifactId>dse-java-driver-mapper-processor</artifactId>\n" +
+                "\t\t\t<version>${dse-java-driver.version}</version>\n" +
+                "\t\t</dependency>\n" +
+                "\t\t<dependency>\n" +
+                "\t\t\t<groupId>com.datastax.dse</groupId>\n" +
+                "\t\t\t<artifactId>dse-java-driver-mapper-runtime</artifactId>\n" +
                 "\t\t\t<version>${dse-java-driver.version}</version>\n" +
                 "\t\t</dependency>\n" +
                 "\n" +
@@ -147,11 +155,11 @@ public class AmbienBoilerplate {
                 "\t\t\t<scope>test</scope>\n" +
                 "\t\t</dependency>\n" +
                 "\n" +
-                "\t\t<!-- Spring Data, extras -->\n" +
+                "\t\t<!-- Reactor -->\n" +
                 "\t\t<dependency>\n" +
-                "\t\t\t<groupId>org.springframework.data</groupId>\n" +
-                "\t\t\t<artifactId>spring-data-commons</artifactId>\n" +
-                "\t\t\t<version>${spring-data.version}</version>\n" +
+                "\t\t\t<groupId>io.projectreactor</groupId>\n" +
+                "\t\t\t<artifactId>reactor-test</artifactId>\n" +
+                "\t\t\t<scope>test</scope>\n" +
                 "\t\t</dependency>\n" +
                 "\n" +
                 "\t\t<dependency>\n" +
@@ -159,6 +167,7 @@ public class AmbienBoilerplate {
                 "\t\t\t<artifactId>typeparser</artifactId>\n" +
                 "\t\t\t<version>0.1</version>\n" +
                 "\t\t</dependency>\n" +
+                "\n" +
                 "\t</dependencies>\n" +
                 "\n" +
                 "\t<build>\n" +
@@ -171,7 +180,7 @@ public class AmbienBoilerplate {
                 "\t</build>\n" +
                 "\n" +
                 "\n" +
-                "</project>\n";
+                "</project>";
         return Ambien.writeFile(output_dir + File.separator + "pom.xml", contents);
     }
 
@@ -181,11 +190,14 @@ public class AmbienBoilerplate {
                 "# ------------------------------\n" +
                 "dse.contactPoints=" + host + "\n" +
                 "dse.port=9042\n" +
-                "dse.keyspace=" + keyspace + "\n" +
+                "dse.localDc=" + params.dataCenter + "\n" +
+                "dse.keyspace=" + params.keyspace_name.get(0) + "\n" +
                 ((null == params.username) ? "" : "dse.username=" + params.username + "\n") +
                 ((null == params.password) ? "" : "dse.password=" + params.password + "\n") +
                 ((null == params.truststorePwd) ? "" : "dse.truststorePwd=" + params.truststorePwd + "\n") +
                 ((null == params.keystorePwd) ? "" : "dse.keystorePwd=" + params.keystorePwd + "\n") +
+                ((null == params.truststorePath) ? "" : "dse.truststorePath=" + params.resourcesDir + File.separator + "truststore" + "\n") +
+                ((null == params.keystorePath) ? "" : "dse.keystorePath=" + params.resourcesDir + File.separator + "keystore" + "\n") +
                 "\n" +
                 "# ----------------------\n" +
                 "# Spring Boot parameters\n" +
@@ -232,114 +244,154 @@ public class AmbienBoilerplate {
         return Ambien.writeFile(params.javaSrcDir + File.separator + "AmbienApplication.java", contents);
     }
 
-    private boolean makeConfiguration() {
+    private boolean makeLastUpdatedStateListener() {
         String contents = "package " + params.package_name + ";\n" +
                 "\n" +
+                "import com.datastax.oss.driver.api.core.metadata.Node;\n" +
+                "import com.datastax.oss.driver.api.core.metadata.NodeStateListener;\n" +
+                "\n" +
+                "public class LastUpdatedStateListener implements NodeStateListener {\n" +
+                "    private long lastUpdated = System.currentTimeMillis();\n" +
+                "    private long lastChecked = -1;\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onAdd(Node host) {\n" +
+                "        this.lastUpdated = System.currentTimeMillis();\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onUp(Node host) {\n" +
+                "        this.lastUpdated = System.currentTimeMillis();\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onDown(Node host) {\n" +
+                "        this.lastUpdated = System.currentTimeMillis();\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onRemove(Node host) {\n" +
+                "        this.lastUpdated = System.currentTimeMillis();\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void close() {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "    public long getLastUpdated() {\n" +
+                "        return this.lastUpdated;\n" +
+                "    }\n" +
+                "\n" +
+                "    public long getLastChecked() {\n" +
+                "        long retval = this.lastChecked;\n" +
+                "        this.lastChecked = System.currentTimeMillis();\n" +
+                "        return retval;\n" +
+                "    }\n" +
+                "}\n";
+        return Ambien.writeFile(params.javaSrcDir + File.separator + "LastUpdatedStateListener.java", contents);
+    }
+
+    private boolean makeStateListeningHealthCheck() {
+        String contents = "package " + params.package_name + ";\n" +
+                "\n" +
+                "import com.datastax.dse.driver.api.core.DseSession;\n" +
+                "import com.datastax.oss.driver.api.core.CqlIdentifier;\n" +
+                "import com.datastax.oss.driver.api.core.metadata.*;\n" +
+                "import com.datastax.oss.driver.api.core.metadata.token.TokenRange;\n" +
+                "import org.springframework.beans.factory.annotation.Autowired;\n" +
                 "import org.springframework.beans.factory.annotation.Value;\n" +
-                "import org.springframework.context.annotation.Bean;\n" +
-                "import org.springframework.context.annotation.Configuration;\n" +
-                "import org.springframework.data.cassandra.config.AbstractCassandraConfiguration;\n" +
+                "import org.springframework.boot.actuate.health.Health;\n" +
+                "import org.springframework.boot.actuate.health.HealthIndicator;\n" +
                 "\n" +
-                "import javax.net.ssl.KeyManagerFactory;\n" +
-                "import javax.net.ssl.SSLContext;\n" +
-                "import javax.net.ssl.TrustManagerFactory;\n" +
-                "import java.io.*;\n" +
-                "import java.security.*;\n" +
-                "import java.security.cert.CertificateException;\n" +
+                "import java.util.ArrayList;\n" +
+                "import java.util.List;\n" +
+                "import java.util.stream.Collectors;\n" +
                 "\n" +
-                "import com.datastax.driver.core.*;\n" +
-                "import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;\n" +
-                "import com.datastax.driver.core.policies.TokenAwarePolicy;\n" +
-                "import com.datastax.driver.dse.*;\n" +
-                "import com.datastax.driver.mapping.*;\n" +
+                "public class StateListeningHealthCheck implements HealthIndicator {\n" +
+                "    private LastUpdatedStateListener listener = new LastUpdatedStateListener();\n" +
+                "    private Health lastHealth = Health.unknown().build();\n" +
+                "    private int minReplicas = 2;\n" +
                 "\n" +
-                "@Configuration\n" +
-                "public class AmbienConfiguration extends AbstractCassandraConfiguration {\n" +
-                "    @Value(\"${dse.contactPoints}\")\n" +
-                "    public String contactPoints;\n" +
+                "    @Autowired\n" +
+                "    LastUpdatedStateListener lastUpdatedStateListener;\n" +
+                "    @Autowired\n" +
+                "    private DseSession session;\n" +
                 "\n" +
-                "    //@Value(\"${dse.port}\")\n" +
-                "    private int port = 9042;\n" +
+                "    @Value(\"${dse.localDc}\")\n" +
+                "    private String datacenter;\n" +
                 "\n" +
-                "    //@Value(\"${dse.keyspace}\")\n" +
-                "    private String keyspace = \"" + keyspace + "\";\n" +
+                "    @Value(\"${dse.keyspace}\")\n" +
+                "    private String keyspace;\n" +
                 "\n" +
-                "    public String getContactPoints() {\n" +
-                "        return contactPoints;\n" +
-                "    }\n" +
-                "\n" +
-                "    public String getKeyspaceName() {\n" +
-                "        return keyspace;\n" +
-                "    }\n" +
-                "\n" +
-                "    public int getPort() {\n" +
-                "        return port;\n" +
-                "    }\n" +
-                "\n" +
-                ((null == params.truststorePath) ? "" : "    public String truststorePath = " + params.resourcesDir + File.separator + "truststore" + ";\n\n") +
-                ((null == params.keystorePath) ? "" : "    public String keystorePath = " + params.resourcesDir + File.separator + "keystore" + ";\n\n") +
-                ((null == params.username) ? "" : "    @Value(\"${dse.username}\")\n    public String username;\n\n") +
-                ((null == params.password) ? "" : "    @Value(\"${dse.password}\")\n    public String password;\n\n") +
-                ((null == params.truststorePwd) ? "" : "    @Value(\"${dse.truststorePwd}\")\n    public String truststorePwd;\n\n") +
-                ((null == params.keystorePwd) ? "" : "    @Value(\"${dse.keystorePwd}\")\n    public String keystorePwd;\n\n") +
-                "    private SSLOptions createSSLOptions(String truststorePath, String truststorePwd, String keystorePath, String keystorePwd)\n" +
-                "        throws KeyStoreException, FileNotFoundException, IOException, NoSuchAlgorithmException,\n" +
-                "            KeyManagementException, CertificateException, UnrecoverableKeyException {\n" +
-                "        TrustManagerFactory tmf = null;\n" +
-                "        if (null != truststorePath) {\n" +
-                "            KeyStore tks = KeyStore.getInstance(\"JKS\");\n" +
-                "            tks.load(new FileInputStream(new File(truststorePath)),\n" +
-                "                     truststorePwd.toCharArray());\n" +
-                "            tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());\n" +
-                "            tmf.init(tks);\n" +
+                "    private List<String> findKeyspacesForDataCenter(String datacenter, Metadata metadata, TokenMap tokenMap) {\n" +
+                "        List<String> keyspaces = new ArrayList<String>();\n" +
+                "        Node oneNode = metadata.getNodes().values().stream().filter(n -> (0 == datacenter.compareTo(n.getDatacenter()))).findAny().orElse(null);\n" +
+                "        if (null == oneNode)\n" +
+                "            throw new IllegalArgumentException(\"No nodes found for the data center (\" + datacenter + \")\");\n" +
+                "        for (CqlIdentifier ks : metadata.getKeyspaces().keySet()) {\n" +
+                "            if (0 <= tokenMap.getTokenRanges(ks, oneNode).size()) {\n" +
+                "                keyspaces.add(ks.asInternal());\n" +
+                "            }\n" +
                 "        }\n" +
+                "        if (0 == keyspaces.size())\n" +
+                "            throw new IllegalArgumentException(\"No keyspaces replicated to this data center (\" + datacenter + \")\");\n" +
+                "        return keyspaces;\n" +
+                "    }\n" +
                 "\n" +
-                "        KeyManagerFactory kmf = null;\n" +
-                "        if (null != keystorePath) {\n" +
-                "            KeyStore kks = KeyStore.getInstance(\"JKS\");\n" +
-                "            kks.load(new FileInputStream(new File(keystorePath)),\n" +
-                "                     keystorePwd.toCharArray());\n" +
-                "            kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());\n" +
-                "            kmf.init(kks, keystorePwd.toCharArray());\n" +
+                "    @Override\n" +
+                "    public Health health() {\n" +
+                "        if (listener.getLastUpdated() < listener.getLastChecked())\n" +
+                "            return lastHealth;\n" +
+                "        Metadata metadata = session.getMetadata();\n" +
+                "        List<TokenRange> badTokenRanges = new ArrayList<TokenRange>();\n" +
+                "        if (!metadata.getTokenMap().isPresent())\n" +
+                "            return Health.unknown().build();\n" +
+                "        TokenMap tokenMap = metadata.getTokenMap().get();\n" +
+                "        if (null == keyspace) {\n" +
+                "            keyspace = findKeyspacesForDataCenter(datacenter, metadata, tokenMap).get(0);\n" +
                 "        }\n" +
+                "        for (TokenRange tr : tokenMap.getTokenRanges()) {\n" +
+                "            long numReplicas = tokenMap.getReplicas(keyspace, tr).size();\n" +
+                "            long numReplicasUp = tokenMap.getReplicas(keyspace, tr)\n" +
+                "                    .stream()\n" +
+                "                    .filter(h -> (0 == h.getDatacenter().compareTo(datacenter)))\n" +
+                "                    .filter(h -> (h.getState() == NodeState.UP))\n" +
+                "                    .count();\n" +
+                "            if (numReplicasUp > (numReplicas + 1)/2)\n" +
+                "                badTokenRanges.add(tr);\n" +
+                "        }\n" +
+                "        List<Node> badHosts = metadata.getNodes().values()\n" +
+                "                .stream()\n" +
+                "                .filter(h -> (0 == h.getDatacenter().compareTo(datacenter)))\n" +
+                "                .filter(h -> (h.getState() != NodeState.UP))\n" +
+                "                .collect(Collectors.toList());\n" +
                 "\n" +
-                "        SSLContext sslContext = SSLContext.getInstance(\"TLS\");\n" +
-                "        sslContext.init(kmf != null? kmf.getKeyManagers() : null,\n" +
-                "                        tmf != null ? tmf.getTrustManagers() : null,\n" +
-                "                        new SecureRandom());\n" +
+                "        Health.Builder hbuilder = (badTokenRanges.isEmpty()) ? Health.up() : Health.down();\n" +
+                "        hbuilder.withDetail(\"BadTokenRanges\", badTokenRanges);\n" +
+                "        hbuilder.withDetail(\"DownHosts\", badHosts);\n" +
+                "        hbuilder.withDetail(\"NumTokenRanges\", tokenMap.getTokenRanges().size());\n" +
+                "        hbuilder.withDetail(\"NumHosts\", metadata.getNodes().values().size());\n" +
+                "        hbuilder.withDetail(\"DataCenter\", datacenter);\n" +
+                "        hbuilder.withDetail(\"Keyspace Checked\", keyspace);\n" +
                 "\n" +
-                "        return RemoteEndpointAwareJdkSSLOptions.builder().withSSLContext(sslContext).build();\n" +
+                "        lastHealth = hbuilder.build();\n" +
+                "        return lastHealth;\n" +
                 "    }\n" +
-                "\n" +
-                "    @Bean\n" +
-                "    public DseCluster dseCluster() {\n" +
-                "        DseCluster.Builder dseClusterBuilder =\n" +
-                "                DseCluster.builder()\n" +
-                "                        .addContactPoints(contactPoints)\n" +
-                "                        .withPort(port)\n" +
-                "                        .withLoadBalancingPolicy(new TokenAwarePolicy( DCAwareRoundRobinPolicy.builder().build() ) );\n" +
-                ((null == params.username) ?  "" : "        if (null != username)\n" +
-                "            clusterBuilder = clusterBuilder.withCredentials(username, password);\n") +
-                ((null == params.truststorePwd) ?  "" : "        if (null != truststorePath)\n" +
-                "            clusterBuilder = clusterBuilder.withSSL(createSSLOptions(truststorePath, truststorePwd, keystorePath, keystorePwd));\n") +
-                "        return dseClusterBuilder.build();\n" +
-                "    }\n" +
-                "\n" +
-                "    @Bean\n" +
-                "    public DseSession dseSession(DseCluster dseCluster) {\n" +
-                "\n" +
-                "        return dseCluster.connect(keyspace);\n" +
-                "    }\n" +
-                "\n" +
-                "\n" +
-                "    @Bean\n" +
-                "    public MappingManager mappingManager(DseSession dseSession) {\n" +
-                "\n" +
-                "        return new MappingManager(dseSession);\n" +
-                "    }"+
                 "}\n";
 
-        return Ambien.writeFile(params.javaSrcDir + File.separator + "AmbienConfiguration.java", contents);
+        return Ambien.writeFile(params.javaSrcDir + File.separator + "StateListeningHealthCheck.java", contents);
+    }
+
+    private boolean makeAmbienHealthCheck() {
+        String contents = "package " + params.package_name + ";\n" +
+                "\n" +
+                "import org.springframework.stereotype.Component;\n" +
+                "\n" +
+                "@Component\n" +
+                "public class AmbienHealthCheck extends StateListeningHealthCheck {\n" +
+                "}\n";
+        return Ambien.writeFile(params.javaSrcDir + File.separator + "AmbienHealthCheck.java", contents);
     }
 
     private boolean addKeystore() {
