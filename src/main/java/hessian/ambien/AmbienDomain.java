@@ -34,7 +34,7 @@ public class AmbienDomain {
     }
 
     public boolean produceDomainClasses() {
-        return (!produceClass());
+        return produceClass();
     }
 
     private boolean produceClass() {

@@ -55,8 +55,8 @@ public class AmbienRepository {
     }
 
     public boolean produceRepositoryClasses() {
-        return (!makeMapper())
-                && (!produceBaseRepositoryClass());
+        return makeMapper()
+                && produceBaseRepositoryClass();
     }
 
     private String typeFor(ColumnMetadata cm) {

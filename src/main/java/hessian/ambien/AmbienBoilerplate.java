@@ -22,24 +22,24 @@ public class AmbienBoilerplate {
     }
 
     public boolean produceBoilerplate() {
-        return (!makeDirectoryStructure())
-                && (!makePomXml())
-                && (!makeApplicationProperties())
-                && (!makeApplication())
-                && (!makeLastUpdatedStateListener())
-                && (!makeStateListeningHealthCheck())
-                && (!makeAmbienHealthCheck())
-                && (!addKeystore())
-                && (!addTruststore())
-                && (!copyResources());
+        return makeDirectoryStructure()
+                && makePomXml()
+                && makeApplicationProperties()
+                && makeApplication()
+                && makeLastUpdatedStateListener()
+                && makeStateListeningHealthCheck()
+                && makeAmbienHealthCheck()
+                && addKeystore()
+                && addTruststore()
+                && copyResources();
     }
 
     private   boolean makeDirectoryStructure() {
-        return (!createDirectory(params.srcDomainDir))
-                && (!createDirectory(hessianTypeparserDir))
-                && (!createDirectory(params.srcRepositoryDir))
-                && (!createDirectory(params.srcControllerDir))
-                && (!createDirectory(params.resourcesTemplatesDir));
+        return createDirectory(params.srcDomainDir)
+                && createDirectory(hessianTypeparserDir)
+                && createDirectory(params.srcRepositoryDir)
+                && createDirectory(params.srcControllerDir)
+                && createDirectory(params.resourcesTemplatesDir);
     }
 
     private boolean createDirectory(String dir) {
