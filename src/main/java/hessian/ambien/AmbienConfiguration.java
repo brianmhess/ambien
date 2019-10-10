@@ -68,7 +68,7 @@ public class AmbienConfiguration {
                 "        TrustManagerFactory tmf = null;\n" +
                 "        if (null != truststorePath) {\n" +
                 "            KeyStore tks = KeyStore.getInstance(\"JKS\");\n" +
-                "            tks.load(new FileInputStream(new File(truststorePath)),\n" +
+                "            tks.load(this.getClass().getResourceAsStream(truststorePath),\n" +
                 "                    truststorePwd.toCharArray());\n" +
                 "            tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());\n" +
                 "            tmf.init(tks);\n" +
@@ -77,7 +77,7 @@ public class AmbienConfiguration {
                 "        KeyManagerFactory kmf = null;\n" +
                 "        if (null != keystorePath) {\n" +
                 "            KeyStore kks = KeyStore.getInstance(\"JKS\");\n" +
-                "            kks.load(new FileInputStream(new File(keystorePath)),\n" +
+                "            kks.load(this.getClass().getResourceAsStream(keystorePath),\n" +
                 "                    keystorePwd.toCharArray());\n" +
                 "            kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());\n" +
                 "            kmf.init(kks, keystorePwd.toCharArray());\n" +
@@ -91,17 +91,30 @@ public class AmbienConfiguration {
                 "        return sslContext;\n" +
                 "    }\n" +
                 "    @Bean\n" +
-                "    public DseSession dseSession() throws IOException, KeyStoreException, NoSuchAlgorithmException, KeyManagementException,\n" +
+                "    public DseSession dseSession(LastUpdatedStateListener lastUpdatedStateListener, LastUpdatedSchemaListener lastUpdateSchemaListener)" +
+                "            throws IOException, KeyStoreException, NoSuchAlgorithmException, KeyManagementException,\n" +
                 "               CertificateException, UnrecoverableKeyException {\n" +
                 "        DseSessionBuilder builder = DseSession.builder()\n" +
                 "                .addContactPoint(InetSocketAddress.createUnresolved(contactPoints, port))\n" +
                 "                .withLocalDatacenter(localDatacenter);\n" +
                 "        if (null != username)\n" +
                 "            builder = builder.withAuthCredentials(username, password);\n" +
-                "        if (null != truststorePath)\n" +
+                "        if ((null != truststorePath) || (null != keystorePath))\n" +
                 "            builder = builder.withSslContext(createSSLOptions());\n" +
+                "        builder.withNodeStateListener(lastUpdatedStateListener);\n" +
+                "        builder.withSchemaChangeListener(lastUpdateSchemaListener);\n" +
                 "\n" +
                 "        return builder.build();\n" +
+                "    }\n" +
+                "\n" +
+                "    @Bean\n" +
+                "    public LastUpdatedStateListener lastUpdatedStateListener() {\n" +
+                "        return new LastUpdatedStateListener();\n" +
+                "    }\n" +
+                "\n" +
+                "    @Bean\n" +
+                "    public LastUpdatedSchemaListener lastUpdatedSchemaListener() {\n" +
+                "        return new LastUpdatedSchemaListener();\n" +
                 "    }\n" +
                 "\n");
         for (int i = 0; i < params.keyspace_name.size(); i++) {

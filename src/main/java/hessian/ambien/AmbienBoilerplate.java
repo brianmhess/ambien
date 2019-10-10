@@ -27,6 +27,7 @@ public class AmbienBoilerplate {
                 && makeApplicationProperties()
                 && makeApplication()
                 && makeLastUpdatedStateListener()
+                && makeLastUpdatedSchemaListener()
                 && makeStateListeningHealthCheck()
                 && makeAmbienHealthCheck()
                 && addKeystore()
@@ -196,8 +197,8 @@ public class AmbienBoilerplate {
                 ((null == params.password) ? "" : "dse.password=" + params.password + "\n") +
                 ((null == params.truststorePwd) ? "" : "dse.truststorePwd=" + params.truststorePwd + "\n") +
                 ((null == params.keystorePwd) ? "" : "dse.keystorePwd=" + params.keystorePwd + "\n") +
-                ((null == params.truststorePath) ? "" : "dse.truststorePath=" + params.resourcesDir + File.separator + "truststore" + "\n") +
-                ((null == params.keystorePath) ? "" : "dse.keystorePath=" + params.resourcesDir + File.separator + "keystore" + "\n") +
+                ((null == params.truststorePath) ? "" : "dse.truststorePath=truststore" + "\n") +
+                ((null == params.keystorePath) ? "" : "dse.keystorePath=keystore" + "\n") +
                 "\n" +
                 "# ----------------------\n" +
                 "# Spring Boot parameters\n" +
@@ -207,7 +208,8 @@ public class AmbienBoilerplate {
                 "\n" +
                 "springdata.basepackage=" + params.package_name + ".domain;\n" +
                 "management.endpoints.web.exposure.include=*\n" +
-                "management.endpoint.health.show-details=always\n\n";
+                "management.endpoint.health.show-details=always\n" +
+                "management.health.cassandra.enabled=false\n";
         if ((null != params.keystorePwd) || (null != params.truststorePwd)) {
             contents = contents + "\n# DSE Security parameters\n";
             if (null != params.keystorePwd) {
@@ -292,6 +294,127 @@ public class AmbienBoilerplate {
         return Ambien.writeFile(params.javaSrcDir + File.separator + "LastUpdatedStateListener.java", contents);
     }
 
+    private boolean makeLastUpdatedSchemaListener() {
+        String contents = "package " + params.package_name + ";\n" +
+                "\n" +
+                "import com.datastax.oss.driver.api.core.metadata.schema.*;\n" +
+                "import com.datastax.oss.driver.api.core.type.UserDefinedType;\n" +
+                "import edu.umd.cs.findbugs.annotations.NonNull;\n" +
+                "\n" +
+                "public class LastUpdatedSchemaListener implements SchemaChangeListener {\n" +
+                "    private long lastUpdated = System.currentTimeMillis();\n" +
+                "    private long lastChecked = -1;\n" +
+                "\n" +
+                "    public long getLastUpdated() {\n" +
+                "        return this.lastUpdated;\n" +
+                "    }\n" +
+                "\n" +
+                "    public long getLastChecked() {\n" +
+                "        long retval = this.lastChecked;\n" +
+                "        this.lastChecked = System.currentTimeMillis();\n" +
+                "        return retval;\n" +
+                "    }\n" +
+                "\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onKeyspaceCreated(@NonNull KeyspaceMetadata keyspaceMetadata) {\n" +
+                "        lastUpdated = System.currentTimeMillis();\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onKeyspaceDropped(@NonNull KeyspaceMetadata keyspaceMetadata) {\n" +
+                "        lastUpdated = System.currentTimeMillis();\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onKeyspaceUpdated(@NonNull KeyspaceMetadata keyspaceMetadata, @NonNull KeyspaceMetadata keyspaceMetadata1) {\n" +
+                "        lastUpdated = System.currentTimeMillis();\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onTableCreated(@NonNull TableMetadata tableMetadata) {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onTableDropped(@NonNull TableMetadata tableMetadata) {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onTableUpdated(@NonNull TableMetadata tableMetadata, @NonNull TableMetadata tableMetadata1) {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onUserDefinedTypeCreated(@NonNull UserDefinedType userDefinedType) {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onUserDefinedTypeDropped(@NonNull UserDefinedType userDefinedType) {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onUserDefinedTypeUpdated(@NonNull UserDefinedType userDefinedType, @NonNull UserDefinedType userDefinedType1) {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onFunctionCreated(@NonNull FunctionMetadata functionMetadata) {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onFunctionDropped(@NonNull FunctionMetadata functionMetadata) {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onFunctionUpdated(@NonNull FunctionMetadata functionMetadata, @NonNull FunctionMetadata functionMetadata1) {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onAggregateCreated(@NonNull AggregateMetadata aggregateMetadata) {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onAggregateDropped(@NonNull AggregateMetadata aggregateMetadata) {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onAggregateUpdated(@NonNull AggregateMetadata aggregateMetadata, @NonNull AggregateMetadata aggregateMetadata1) {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onViewCreated(@NonNull ViewMetadata viewMetadata) {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onViewDropped(@NonNull ViewMetadata viewMetadata) {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void onViewUpdated(@NonNull ViewMetadata viewMetadata, @NonNull ViewMetadata viewMetadata1) {\n" +
+                "\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void close() throws Exception {\n" +
+                "\n" +
+                "    }\n" +
+                "}\n";
+
+        return Ambien.writeFile(params.javaSrcDir + File.separator + "LastUpdatedSchemaListener.java", contents);
+    }
+
     private boolean makeStateListeningHealthCheck() {
         String contents = "package " + params.package_name + ";\n" +
                 "\n" +
@@ -309,14 +432,14 @@ public class AmbienBoilerplate {
                 "import java.util.stream.Collectors;\n" +
                 "\n" +
                 "public class StateListeningHealthCheck implements HealthIndicator {\n" +
-                "    private LastUpdatedStateListener listener = new LastUpdatedStateListener();\n" +
                 "    private Health lastHealth = Health.unknown().build();\n" +
-                "    private int minReplicas = 2;\n" +
                 "\n" +
+                "    @Autowired\n" +
+                "    private DseSession session;" +
                 "    @Autowired\n" +
                 "    LastUpdatedStateListener lastUpdatedStateListener;\n" +
                 "    @Autowired\n" +
-                "    private DseSession session;\n" +
+                "    LastUpdatedSchemaListener lastUpdatedSchemaListener;\n" +
                 "\n" +
                 "    @Value(\"${dse.localDc}\")\n" +
                 "    private String datacenter;\n" +
@@ -341,15 +464,19 @@ public class AmbienBoilerplate {
                 "\n" +
                 "    @Override\n" +
                 "    public Health health() {\n" +
-                "        if (listener.getLastUpdated() < listener.getLastChecked())\n" +
+                "        if ((lastUpdatedStateListener.getLastUpdated() < lastUpdatedStateListener.getLastChecked())\n" +
+                "            && (lastUpdatedSchemaListener.getLastUpdated() < lastUpdatedSchemaListener.getLastChecked()))\n" +
                 "            return lastHealth;\n" +
                 "        Metadata metadata = session.getMetadata();\n" +
                 "        List<TokenRange> badTokenRanges = new ArrayList<TokenRange>();\n" +
                 "        if (!metadata.getTokenMap().isPresent())\n" +
                 "            return Health.unknown().build();\n" +
                 "        TokenMap tokenMap = metadata.getTokenMap().get();\n" +
-                "        if (null == keyspace) {\n" +
-                "            keyspace = findKeyspacesForDataCenter(datacenter, metadata, tokenMap).get(0);\n" +
+                "        if (null == keyspace) {" +
+                "            List<String> keyspaces = findKeyspacesForDataCenter(datacenter, metadata, tokenMap);\n" +
+                "            if (0 == keyspaces.size())\n" +
+                "                return Health.unknown().build();\n" +
+                "            keyspace = keyspaces.get(0);\n" +
                 "        }\n" +
                 "        for (TokenRange tr : tokenMap.getTokenRanges()) {\n" +
                 "            long numReplicas = tokenMap.getReplicas(keyspace, tr).size();\n" +

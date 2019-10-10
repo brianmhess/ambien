@@ -77,6 +77,16 @@ public class AmbienParams {
             return false;
         }
 
+        if ((null != keystorePath) && (null == keystorePwd)) {
+            System.err.println("If you specify a keystore, you must specify a keystore password.");
+            return false;
+        }
+
+        if ((null != truststorePath) && (null == truststorePwd)) {
+            System.err.println("If you specify a truststore, you must specify a truststore password.");
+            return false;
+        }
+
         return true;
     }
 
