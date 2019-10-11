@@ -17,94 +17,67 @@ public class AmbienConfiguration {
                 "import org.springframework.beans.factory.annotation.Value;\n" +
                 "import org.springframework.context.annotation.Bean;\n" +
                 "import org.springframework.context.annotation.Configuration;\n" +
-                "\n" +
-                "import javax.net.ssl.KeyManagerFactory;\n" +
-                "import javax.net.ssl.SSLContext;\n" +
-                "import javax.net.ssl.TrustManagerFactory;\n" +
+                "import org.springframework.util.StreamUtils;\n" +
                 "\n" +
                 "import java.io.File;\n" +
-                "import java.io.FileInputStream;\n" +
-                "import java.io.FileNotFoundException;\n" +
-                "import java.io.IOException;\n" +
-                "import java.net.InetSocketAddress;\n" +
-                "import java.security.*;\n" +
-                "import java.security.cert.CertificateException;\n" +
+                "import java.io.IOException;" +
+                "import java.io.FileOutputStream;\n" +
+                "import java.io.InputStream;\n" +
                 "\n" +
                 "import " + params.package_name + ".dao.*;" +
                 "\n" +
                 "\n" +
                 "@Configuration\n" +
                 "public class AmbienConfiguration {\n" +
-                "    @Value(\"${dse.contactPoints}\")\n" +
-                "    public String contactPoints;\n" +
+                "    @Value(\"${apollo.credentials}\")\n" +
+                "    private String apolloCredentials;\n" +
                 "\n" +
-                "    @Value(\"${dse.port}\")\n" +
-                "    private int port;\n" +
+                "    @Value(\"${dse.username}\")\n" +
+                "    private String username;\n" +
                 "\n" +
-                "    @Value(\"${dse.localDc}\")\n" +
-                "    private String localDatacenter;\n" +
+                "    @Value(\"${dse.password}\")\n" +
+                "    private String password;\n" +
                 "\n" +
-                "    @Value(\"${dse.truststorePath:#{null}}\")\n    public String truststorePath;\n\n" +
-                "    @Value(\"${dse.keystorePath:#{null}}\")\n    public String keystorePath;\n\n" +
-                "    @Value(\"${dse.username:#{null}}\")\n    public String username;\n\n" +
-                "    @Value(\"${dse.password:#{null}}\")\n    public String password;\n\n" +
-                "    @Value(\"${dse.truststorePwd:#{null}}\")\n    public String truststorePwd;\n\n" +
-                "    @Value(\"${dse.keystorePwd:#{null}}\")\n    public String keystorePwd;\n\n" +
-                "    public String getContactPoints() {\n" +
-                "        return contactPoints;\n" +
+                "    private File apolloCredentialsFile;\n" +
+                "\n" +
+                "    public String getApolloCredentials() {\n" +
+                "        return this.apolloCredentials;\n" +
                 "    }\n" +
                 "\n" +
-                "    public int getPort() {\n" +
-                "        return port;\n" +
+                "    public File getApolloCredentialsFile() {\n" +
+                "        return this.apolloCredentialsFile;\n" +
                 "    }\n" +
                 "\n" +
-                "    public String getLocalDatacenter() {\n" +
-                "        return localDatacenter;\n" +
+                "    public String getUsername() {\n" +
+                "        return this.username;\n" +
                 "    }\n" +
                 "\n" +
-                "    private SSLContext createSSLOptions()\n" +
-                "        throws KeyStoreException, FileNotFoundException, IOException, NoSuchAlgorithmException,\n" +
-                "            KeyManagementException, CertificateException, UnrecoverableKeyException {\n" +
-                "        TrustManagerFactory tmf = null;\n" +
-                "        if (null != truststorePath) {\n" +
-                "            KeyStore tks = KeyStore.getInstance(\"JKS\");\n" +
-                "            tks.load(this.getClass().getResourceAsStream(truststorePath),\n" +
-                "                    truststorePwd.toCharArray());\n" +
-                "            tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());\n" +
-                "            tmf.init(tks);\n" +
-                "        }\n" +
-                "\n" +
-                "        KeyManagerFactory kmf = null;\n" +
-                "        if (null != keystorePath) {\n" +
-                "            KeyStore kks = KeyStore.getInstance(\"JKS\");\n" +
-                "            kks.load(this.getClass().getResourceAsStream(keystorePath),\n" +
-                "                    keystorePwd.toCharArray());\n" +
-                "            kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());\n" +
-                "            kmf.init(kks, keystorePwd.toCharArray());\n" +
-                "        }\n" +
-                "\n" +
-                "        SSLContext sslContext = SSLContext.getInstance(\"TLS\");\n" +
-                "        sslContext.init(kmf != null? kmf.getKeyManagers() : null,\n" +
-                "                        tmf != null ? tmf.getTrustManagers() : null,\n" +
-                "                        new SecureRandom());\n" +
-                "\n" +
-                "        return sslContext;\n" +
+                "    public String getPassword() {\n" +
+                "        return this.password;\n" +
                 "    }\n" +
+                "\n" +
                 "    @Bean\n" +
-                "    public DseSession dseSession(LastUpdatedStateListener lastUpdatedStateListener, LastUpdatedSchemaListener lastUpdateSchemaListener)" +
-                "            throws IOException, KeyStoreException, NoSuchAlgorithmException, KeyManagementException,\n" +
-                "               CertificateException, UnrecoverableKeyException {\n" +
-                "        DseSessionBuilder builder = DseSession.builder()\n" +
-                "                .addContactPoint(InetSocketAddress.createUnresolved(contactPoints, port))\n" +
-                "                .withLocalDatacenter(localDatacenter);\n" +
-                "        if (null != username)\n" +
-                "            builder = builder.withAuthCredentials(username, password);\n" +
-                "        if ((null != truststorePath) || (null != keystorePath))\n" +
-                "            builder = builder.withSslContext(createSSLOptions());\n" +
-                "        builder.withNodeStateListener(lastUpdatedStateListener);\n" +
-                "        builder.withSchemaChangeListener(lastUpdateSchemaListener);\n" +
+                "    public DseSession dseSession(LastUpdatedStateListener lastUpdatedStateListener, LastUpdatedSchemaListener lastUpdateSchemaListener) {\n" +
+                "        try {\n" +
+                "            this.apolloCredentialsFile = File.createTempFile(\"dsecscb\", \".zip\");\n" +
+                "            FileOutputStream fos = new FileOutputStream(this.apolloCredentialsFile);\n" +
+                "            InputStream credsInputStream = this.getClass().getResourceAsStream(this.apolloCredentials);\n" +
+                "            StreamUtils.copy(credsInputStream, fos);\n" +
+                "            credsInputStream.close();\n" +
+                "            fos.close();\n" +
+                "        }\n" +
+                "        catch (IOException ioe) {\n" +
+                "            throw new RuntimeException(\"Could not save cloud secure connect bundle to filesystem (\"\n" +
+                "                    + ((null == this.apolloCredentialsFile) ? \" <null> \" : this.apolloCredentialsFile.getAbsolutePath()) + \")\");\n" +
+                "        }\n" +
                 "\n" +
-                "        return builder.build();\n" +
+                "        DseSessionBuilder dseSessionBuilder = DseSession.builder()\n" +
+                "                .withCloudSecureConnectBundle(this.apolloCredentialsFile.getAbsolutePath())\n" +
+                "                .withAuthCredentials(this.username, this.password);\n" +
+                "        dseSessionBuilder.withNodeStateListener(lastUpdatedStateListener);\n" +
+                "        dseSessionBuilder.withSchemaChangeListener(lastUpdateSchemaListener);\n" +
+                "\n" +
+                "        return dseSessionBuilder.build();\n" +
                 "    }\n" +
                 "\n" +
                 "    @Bean\n" +

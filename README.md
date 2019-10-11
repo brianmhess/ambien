@@ -5,29 +5,28 @@ It gives you rest...
 `mvn clean package`
 
 ## Running
-`java -jar target/ambien-0.1-SNAPSHOT-jar-with-dependencies.jar <options>`
+`target/ambien <options>`
 
 ## Usage:
 ```
-version: 0.1.1
-Usage: ambien -host <hostname> -k <keyspaceName> -t <tableName> -o <outputDir> [options]
+version: 0.1.2
+Usage: ambien -apolloBundle <creds.zip> -user <username> -pw <password> -kt <keyspaceName.tableName> -o <outputDir> [options]
 OPTIONS:
-  -host <hostname>               Contact point for DSE [required]
   -dc <dataCenter>               Data center to connect to [dc1]
   -kt <keyspace.table>           Keyspace and Table to use, can be a comma-separated list [required]
   -o <outputDir>                 Directory to write to (must be empty) [required]
   -configFile <filename>         File with configuration options [none]
-  -port <portNumber>             CQL Port Number [9042]
   -user <username>               Cassandra username [none]
   -pw <password>                 Password for user [none]
-  -ssl-truststore-path <path>    Path to SSL truststore [none]
-  -ssl-truststore-pw <pwd>       Password for SSL truststore [none]
-  -ssl-keystore-path <path>      Path to SSL keystore [none]
-  -ssl-keystore-pw <pwd>         Password for SSL keystore [none]
   -httpPort <httpPort>           Port for HTTP REST endpoint [8222]
   -endpointRoot <root>           REST endpoint to create (use '$keyspace' for keyspace name and '$table' for table name) [api/$keyspace/$table]
   -packageName <pkg>             Package name [hessian.ambien]
+  -apolloBundle <filename>        Apollo credentials zip file [none]
+
 ```
+
+You must supply the Apollo credentials zip file, username, password, at least one
+keyspace.table, and an output directory (which should be empty).
 
 This will produce a directory of source code in the supplied directory.
 After running Ambien, change directory to the output directory and run:

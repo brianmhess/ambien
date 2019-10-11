@@ -4,15 +4,9 @@ import java.io.*;
 import java.util.*;
 
 public class AmbienParams {
-    public String host = null;
-    public int port = 9042;
-    public String dataCenter = "dc1";
+    public String dataCenter = "caas-dc";
     public String username = null;
     public String password = null;
-    public String truststorePath = null;
-    public String truststorePwd = null;
-    public String keystorePath = null;
-    public String keystorePwd = null;
     public String kt_list = null;
     public List<String> table_name = new ArrayList<String>();
     public List<String> keyspace_name = new ArrayList<String>();
@@ -20,6 +14,7 @@ public class AmbienParams {
     public int httpPort = 8222;
     public String endpointRoot = "api/$keyspace/$table";
     public String package_name = "hessian.ambien";
+    public String apolloBundle = null;
 
     public String javaSrcDir = null;
     public String resourcesDir = null;
@@ -30,28 +25,28 @@ public class AmbienParams {
 
     public static String usage() {
         StringBuilder usage = new StringBuilder();
+        usage.append("Usage: ambien -apolloBundle <creds.zip> -user <username> -pw <password> -kt <keyspaceName.tableName> -o <outputDir> [options]\n");
         usage.append("OPTIONS:\n");
-        usage.append("  -host <hostname>               Contact point for DSE [required]\n");
         usage.append("  -dc <dataCenter>               Data center to connect to [dc1]\n");
         usage.append("  -kt <keyspace.table>           Keyspace and Table to use, can be a comma-separated list [required]\n");
         usage.append("  -o <outputDir>                 Directory to write to (must be empty) [required]\n");
         usage.append("  -configFile <filename>         File with configuration options [none]\n");
-        usage.append("  -port <portNumber>             CQL Port Number [9042]\n");
         usage.append("  -user <username>               Cassandra username [none]\n");
         usage.append("  -pw <password>                 Password for user [none]\n");
-        usage.append("  -ssl-truststore-path <path>    Path to SSL truststore [none]\n");
-        usage.append("  -ssl-truststore-pw <pwd>       Password for SSL truststore [none]\n");
-        usage.append("  -ssl-keystore-path <path>      Path to SSL keystore [none]\n");
-        usage.append("  -ssl-keystore-pw <pwd>         Password for SSL keystore [none]\n");
         usage.append("  -httpPort <httpPort>           Port for HTTP REST endpoint [8222]\n");
         usage.append("  -endpointRoot <root>           REST endpoint to create (use '$keyspace' for keyspace name and '$table' for table name) [api/$keyspace/$table]\n");
         usage.append("  -packageName <pkg>             Package name [hessian.ambien]\n");
+        usage.append("  -apolloBundle <filename>        Apollo credentials zip file [none]\n");
         return usage.toString();
     }
 
     private boolean validateArgs() {
-        if (null == host) {
-            System.err.println("No host provided.");
+        if (null == username) {
+            System.err.println("Must specify a username");
+            return false;
+        }
+        if (null == password) {
+            System.err.println("Must specify a password");
             return false;
         }
         if (null == kt_list) {
@@ -74,16 +69,6 @@ public class AmbienParams {
 
         if (null == output_dir) {
             System.err.println("No output directory provided.");
-            return false;
-        }
-
-        if ((null != keystorePath) && (null == keystorePwd)) {
-            System.err.println("If you specify a keystore, you must specify a keystore password.");
-            return false;
-        }
-
-        if ((null != truststorePath) && (null == truststorePwd)) {
-            System.err.println("If you specify a truststore, you must specify a truststore password.");
             return false;
         }
 
@@ -132,24 +117,19 @@ public class AmbienParams {
             if (!processConfigFile(tkey, amap))
                 return false;
 
-        host = amap.remove("-host");
-        if (null == host) { // host is required
-            System.err.println("Must provide a host");
+        apolloBundle = amap.remove("-apolloBundle");
+        if (null == apolloBundle) { // host is required
+            System.err.println("Must provide an Apollo credentials file");
             return false;
         }
 
-        if (null != (tkey = amap.remove("-port")))          port = Integer.parseInt(tkey);
         if (null != (tkey = amap.remove("-dc")))            dataCenter = tkey;
         if (null != (tkey = amap.remove("-user")))          username = tkey;
         if (null != (tkey = amap.remove("-pw")))            password = tkey;
-        if (null != (tkey = amap.remove("-ssl-truststore-path"))) truststorePath = tkey;
-        if (null != (tkey = amap.remove("-ssl-truststore-pw")))  truststorePwd =  tkey;
-        if (null != (tkey = amap.remove("-ssl-keystore-path")))   keystorePath = tkey;
-        if (null != (tkey = amap.remove("-ssl-keystore-pw")))    keystorePwd = tkey;
-        if (null != (tkey = amap.remove("-kt")))               kt_list = tkey;
-        if (null != (tkey = amap.remove("-httpPort")))       httpPort = Integer.parseInt(tkey);
-        if (null != (tkey = amap.remove("-endpointRoot")))   endpointRoot = tkey;
-        if (null != (tkey = amap.remove("-packageName")))    package_name = tkey;
+        if (null != (tkey = amap.remove("-kt")))            kt_list = tkey;
+        if (null != (tkey = amap.remove("-httpPort")))      httpPort = Integer.parseInt(tkey);
+        if (null != (tkey = amap.remove("-endpointRoot")))  endpointRoot = tkey;
+        if (null != (tkey = amap.remove("-packageName")))   package_name = tkey;
         if (null != (tkey = amap.remove(("-o")))) {
             if (tkey.endsWith("\\"))
                 tkey = tkey.substring(0, tkey.length()-1);
@@ -214,15 +194,10 @@ public class AmbienParams {
     @Override
     public String toString() {
         return "AmbienParams{" +
-                "host='" + host + '\'' +
-                ", port=" + port +
+                "apolloBundle='" + apolloBundle + '\'' +
                 ", dc='" + dataCenter + '\'' +
                 ", username='" + username + '\'' +
                 ", password='" + password + '\'' +
-                ", truststorePath='" + truststorePath + '\'' +
-                ", truststorePwd='" + truststorePwd + '\'' +
-                ", keystorePath='" + keystorePath + '\'' +
-                ", keystorePwd='" + keystorePwd + '\'' +
                 ", kt_list='" + kt_list + '\'' +
                 ", output_dir='" + output_dir + '\'' +
                 ", httpPort=" + httpPort +

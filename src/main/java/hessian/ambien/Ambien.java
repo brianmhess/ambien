@@ -16,6 +16,8 @@
 package hessian.ambien;
 
 
+import com.datastax.dse.driver.api.core.DseSession;
+import com.datastax.dse.driver.api.core.DseSessionBuilder;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
@@ -36,7 +38,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Ambien {
-    private String version = "0.1.2";
+    private String version = "0.2-apollo";
     private AmbienParams params = new AmbienParams();
 
     private CqlSession session = null;
@@ -46,51 +48,16 @@ public class Ambien {
 
     private String usage() {
         StringBuilder usage = new StringBuilder("version: ").append(version).append("\n");
-        usage.append("Usage: ambien -host <hostname> -kt <keyspaceName.tableName> -o <outputDir> [options]\n");
         usage.append(AmbienParams.usage());
         return usage.toString();
     }
 
-    private SSLContext createSSLOptions()
-        throws KeyStoreException, FileNotFoundException, IOException, NoSuchAlgorithmException,
-            KeyManagementException, CertificateException, UnrecoverableKeyException {
-        TrustManagerFactory tmf = null;
-        if (null != params.truststorePath) {
-            KeyStore tks = KeyStore.getInstance("JKS");
-            tks.load(new FileInputStream(new File(params.truststorePath)),
-                    params.truststorePwd.toCharArray());
-            tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            tmf.init(tks);
-        }
-
-        KeyManagerFactory kmf = null;
-        if (null != params.keystorePath) {
-            KeyStore kks = KeyStore.getInstance("JKS");
-            kks.load(new FileInputStream(new File(params.keystorePath)),
-                    params.keystorePwd.toCharArray());
-            kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-            kmf.init(kks, params.keystorePwd.toCharArray());
-        }
-
-        SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(kmf != null? kmf.getKeyManagers() : null,
-                        tmf != null ? tmf.getTrustManagers() : null,
-                        new SecureRandom());
-
-        return sslContext;
-    }
-
-    private void setup()
-        throws IOException, KeyStoreException, NoSuchAlgorithmException, KeyManagementException,
-               CertificateException, UnrecoverableKeyException  {
+    private void setup() {
         // Connect to Cassandra
-        CqlSessionBuilder builder = CqlSession.builder()
-                .addContactPoint(InetSocketAddress.createUnresolved(params.host, params.port))
-                .withLocalDatacenter(params.dataCenter);
-        if (null != params.username)
-            builder = builder.withAuthCredentials(params.username, params.password);
-        if (null != params.truststorePath)
-            builder = builder.withSslContext(createSSLOptions());
+        DseSessionBuilder builder = DseSession.builder()
+                .withCloudSecureConnectBundle(params.apolloBundle)
+//                .withLocalDatacenter(params.dataCenter)
+                .withAuthCredentials(params.username, params.password);
 
         session = builder.build();
     }

@@ -8,14 +8,12 @@ import java.util.stream.Collectors;
 
 public class AmbienBoilerplate {
     private AmbienParams params = null;
-    private String host = null;
     private String keyspace = null;
     private String output_dir = null;
     private String hessianTypeparserDir = null;
 
     public AmbienBoilerplate(AmbienParams params) {
         this.params = params;
-        this.host = params.host;
         this.keyspace = params.keyspace_name.get(0);
         this.output_dir = params.output_dir;
         this.hessianTypeparserDir = params.output_dir + File.separator + "repo" + File.separator + "hessian" + File.separator + "typeparser" + File.separator + "0.1";
@@ -30,8 +28,7 @@ public class AmbienBoilerplate {
                 && makeLastUpdatedSchemaListener()
                 && makeStateListeningHealthCheck()
                 && makeAmbienHealthCheck()
-                && addKeystore()
-                && addTruststore()
+                && addApolloBundle()
                 && copyResources();
     }
 
@@ -81,7 +78,7 @@ public class AmbienBoilerplate {
                 "\n" +
                 "\t<properties>\n" +
                 "\t\t<!-- DSE -->\n" +
-                "\t\t<dse-java-driver.version>2.2.0</dse-java-driver.version>\n" +
+                "\t\t<dse-java-driver.version>2.2.0-cloud-01</dse-java-driver.version>\n" +
                 "\n" +
                 "\t\t<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>\n" +
                 "\t\t<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>\n" +
@@ -103,6 +100,16 @@ public class AmbienBoilerplate {
                 "\n" +
                 "\n" +
                 "\t<repositories>\n" +
+                "\t\t<repository>\n" +
+                "\t\t\t<id>datastax-releases-public-local</id>\n" +
+                "\t\t\t<url>https://repo.datastax.com/datastax-public-releases-local/</url>\n" +
+                "\t\t\t<releases>\n" +
+                "\t\t\t\t<enabled>true</enabled>\n" +
+                "\t\t\t</releases>\n" +
+                "\t\t\t<snapshots>\n" +
+                "\t\t\t\t<enabled>false</enabled>\n" +
+                "\t\t\t</snapshots>\n" +
+                "\t\t</repository>\n" +
                 "\t\t<repository>\n" +
                 "\t\t\t<id>1-data-local</id>\n" +
                 "\t\t\t<name>datat2</name>\n" +
@@ -189,16 +196,11 @@ public class AmbienBoilerplate {
         String contents = "# ------------------------------\n" +
                 "# DataStax Enterprise parameters\n" +
                 "# ------------------------------\n" +
-                "dse.contactPoints=" + host + "\n" +
-                "dse.port=9042\n" +
+                "apollo.credentials=/creds.zip\n" +
                 "dse.localDc=" + params.dataCenter + "\n" +
                 "dse.keyspace=" + params.keyspace_name.get(0) + "\n" +
                 ((null == params.username) ? "" : "dse.username=" + params.username + "\n") +
                 ((null == params.password) ? "" : "dse.password=" + params.password + "\n") +
-                ((null == params.truststorePwd) ? "" : "dse.truststorePwd=" + params.truststorePwd + "\n") +
-                ((null == params.keystorePwd) ? "" : "dse.keystorePwd=" + params.keystorePwd + "\n") +
-                ((null == params.truststorePath) ? "" : "dse.truststorePath=truststore" + "\n") +
-                ((null == params.keystorePath) ? "" : "dse.keystorePath=keystore" + "\n") +
                 "\n" +
                 "# ----------------------\n" +
                 "# Spring Boot parameters\n" +
@@ -210,15 +212,6 @@ public class AmbienBoilerplate {
                 "management.endpoints.web.exposure.include=*\n" +
                 "management.endpoint.health.show-details=always\n" +
                 "management.health.cassandra.enabled=false\n";
-        if ((null != params.keystorePwd) || (null != params.truststorePwd)) {
-            contents = contents + "\n# DSE Security parameters\n";
-            if (null != params.keystorePwd) {
-                contents = contents + "dse.keystorePwd=" + params.keystorePwd + "\n";
-            }
-            if (null != params.truststorePwd) {
-                contents = contents + "dse.truststorePwd=" + params.truststorePwd + "\n";
-            }
-        }
 
         return Ambien.writeFile(params.resourcesDir + File.separator + "application.properties", contents);
     }
@@ -521,22 +514,10 @@ public class AmbienBoilerplate {
         return Ambien.writeFile(params.javaSrcDir + File.separator + "AmbienHealthCheck.java", contents);
     }
 
-    private boolean addKeystore() {
-        if (null == params.keystorePath) return true;
+    private boolean addApolloBundle() {
+        if (null == params.apolloBundle) return true;
         try {
-            Files.copy(Paths.get(params.keystorePath), Paths.get(params.resourcesDir + File.separator + "keystore"));
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-        return true;
-    }
-
-    private boolean addTruststore() {
-        if (null == params.truststorePath) return true;
-        try {
-            Files.copy(Paths.get(params.truststorePath), Paths.get(params.resourcesDir + File.separator + "truststore"));
+            Files.copy(Paths.get(params.apolloBundle), Paths.get(params.resourcesDir + File.separator + "creds.zip"));
         }
         catch (Exception e) {
             e.printStackTrace();

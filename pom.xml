@@ -5,13 +5,26 @@
 
     <groupId>hessian</groupId>
     <artifactId>ambien</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.2-apollo</version>
     <packaging>jar</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <dse-java-driver.version>2.2.0</dse-java-driver.version>
+        <dse-java-driver.version>2.2.0-cloud-01</dse-java-driver.version>
     </properties>
+
+    <repositories>
+        <repository>
+            <id>datastax-releases-public-local</id>
+            <url>https://repo.datastax.com/datastax-public-releases-local/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
     <dependencies>
         <!-- DSE -->
@@ -35,7 +48,6 @@
             <artifactId>dse-java-driver-mapper-runtime</artifactId>
             <version>${dse-java-driver.version}</version>
         </dependency>
-
     </dependencies>
 
     <build>
