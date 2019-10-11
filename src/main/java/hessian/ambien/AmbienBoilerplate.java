@@ -435,7 +435,7 @@ public class AmbienBoilerplate {
                 "    private Health lastHealth = Health.unknown().build();\n" +
                 "\n" +
                 "    @Autowired\n" +
-                "    private DseSession session;" +
+                "    private DseSession session;\n" +
                 "    @Autowired\n" +
                 "    LastUpdatedStateListener lastUpdatedStateListener;\n" +
                 "    @Autowired\n" +
@@ -472,7 +472,7 @@ public class AmbienBoilerplate {
                 "        if (!metadata.getTokenMap().isPresent())\n" +
                 "            return Health.unknown().build();\n" +
                 "        TokenMap tokenMap = metadata.getTokenMap().get();\n" +
-                "        if (null == keyspace) {" +
+                "        if (null == keyspace) {\n" +
                 "            List<String> keyspaces = findKeyspacesForDataCenter(datacenter, metadata, tokenMap);\n" +
                 "            if (0 == keyspaces.size())\n" +
                 "                return Health.unknown().build();\n" +
@@ -485,7 +485,7 @@ public class AmbienBoilerplate {
                 "                    .filter(h -> (0 == h.getDatacenter().compareTo(datacenter)))\n" +
                 "                    .filter(h -> (h.getState() == NodeState.UP))\n" +
                 "                    .count();\n" +
-                "            if (numReplicasUp > (numReplicas + 1)/2)\n" +
+                "            if (numReplicasUp <= (numReplicas + 1)/2)\n" +
                 "                badTokenRanges.add(tr);\n" +
                 "        }\n" +
                 "        List<Node> badHosts = metadata.getNodes().values()\n" +

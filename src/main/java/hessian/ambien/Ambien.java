@@ -46,7 +46,7 @@ public class Ambien {
 
     private String usage() {
         StringBuilder usage = new StringBuilder("version: ").append(version).append("\n");
-        usage.append("Usage: ambien -host <hostname> -k <keyspaceName> -t <tableName> -o <outputDir> [options]\n");
+        usage.append("Usage: ambien -host <hostname> -kt <keyspaceName.tableName> -o <outputDir> [options]\n");
         usage.append(AmbienParams.usage());
         return usage.toString();
     }
