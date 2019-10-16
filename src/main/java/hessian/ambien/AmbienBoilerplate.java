@@ -4,7 +4,6 @@ import java.io.*;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.Files;
-import java.util.stream.Collectors;
 
 public class AmbienBoilerplate {
     private AmbienParams params = null;

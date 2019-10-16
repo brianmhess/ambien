@@ -19,20 +19,13 @@ package hessian.ambien;
 import com.datastax.dse.driver.api.core.DseSession;
 import com.datastax.dse.driver.api.core.DseSessionBuilder;
 import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
 import java.io.*;
-import java.net.InetSocketAddress;
-import java.security.*;
-import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -56,7 +49,6 @@ public class Ambien {
         // Connect to Cassandra
         DseSessionBuilder builder = DseSession.builder()
                 .withCloudSecureConnectBundle(params.apolloBundle)
-//                .withLocalDatacenter(params.dataCenter)
                 .withAuthCredentials(params.username, params.password);
 
         session = builder.build();
@@ -72,9 +64,7 @@ public class Ambien {
             session.close();
     }
 
-    private boolean run(String[] args)
-        throws IOException, KeyStoreException, NoSuchAlgorithmException, KeyManagementException,
-               CertificateException, UnrecoverableKeyException {
+    public boolean run(String[] args) throws IOException {
         if (!params.parseArgs(args)) {
             System.err.println("Bad arguments");
             System.err.println(usage());
@@ -157,9 +147,8 @@ public class Ambien {
         return true;
     }
 
-    public static void main(String[] args) 
-        throws IOException, KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException,
-               CertificateException, KeyManagementException {
+    /*
+    public static void main(String[] args) throws IOException {
         Ambien a = new Ambien();
         boolean success = a.run(args);
         if (success) {
@@ -169,6 +158,7 @@ public class Ambien {
             System.exit(-1);
         }
     }
+    */
 
 
     public static boolean writeFile(String path, String contents) {

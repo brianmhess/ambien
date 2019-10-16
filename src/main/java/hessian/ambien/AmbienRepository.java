@@ -3,7 +3,6 @@ package hessian.ambien;
 import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
 import com.datastax.oss.driver.shaded.guava.common.collect.Lists;
-import javafx.util.Pair;
 
 import java.io.File;
 import java.util.ArrayList;

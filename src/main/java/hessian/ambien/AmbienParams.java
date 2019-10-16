@@ -23,20 +23,31 @@ public class AmbienParams {
     public String srcRepositoryDir = null;
     public String srcControllerDir = null;
 
+    public static final String apolloBundleOption = "-apolloBundle";
+    public static final String usernameOption = "-user";
+    public static final String passwordOption = "-pw";
+    public static final String ktlistOption = "-kt";
+    public static final String outputDirOption = "-o";
+    public static final String configFileOption = "-configFile";
+    public static final String httpPortOption = "-httpPort";
+    public static final String endpointRootOption = "-endpointRoot";
+    public static final String packageNameOption = "-packageName";
+    public static final String dataCenterOption = "-dc";
+
     public static String usage() {
         StringBuilder usage = new StringBuilder();
         usage.append("Usage: ambien -apolloBundle <creds.zip> -user <username> -pw <password> -kt <keyspaceName.tableName> -o <outputDir> [options]\n");
         usage.append("OPTIONS:\n");
-        usage.append("  -dc <dataCenter>               Data center to connect to [dc1]\n");
-        usage.append("  -kt <keyspace.table>           Keyspace and Table to use, can be a comma-separated list [required]\n");
-        usage.append("  -o <outputDir>                 Directory to write to (must be empty) [required]\n");
-        usage.append("  -configFile <filename>         File with configuration options [none]\n");
-        usage.append("  -user <username>               Cassandra username [none]\n");
-        usage.append("  -pw <password>                 Password for user [none]\n");
-        usage.append("  -httpPort <httpPort>           Port for HTTP REST endpoint [8222]\n");
-        usage.append("  -endpointRoot <root>           REST endpoint to create (use '$keyspace' for keyspace name and '$table' for table name) [api/$keyspace/$table]\n");
-        usage.append("  -packageName <pkg>             Package name [hessian.ambien]\n");
-        usage.append("  -apolloBundle <filename>        Apollo credentials zip file [none]\n");
+        usage.append("  " + dataCenterOption + " <dataCenter>               Data center to connect to [dc1]\n");
+        usage.append("  " + ktlistOption + " <keyspace.table>           Keyspace and Table to use, can be a comma-separated list [required]\n");
+        usage.append("  " + outputDirOption + " <outputDir>                 Directory to write to (must be empty) [required]\n");
+        usage.append("  " + configFileOption + " <filename>         File with configuration options [none]\n");
+        usage.append("  " + usernameOption + " <username>               Cassandra username [none]\n");
+        usage.append("  " + passwordOption + " <password>                 Password for user [none]\n");
+        usage.append("  " + httpPortOption + " <httpPort>           Port for HTTP REST endpoint [8222]\n");
+        usage.append("  " + endpointRootOption + " <root>           REST endpoint to create (use '$keyspace' for keyspace name and '$table' for table name) [api/$keyspace/$table]\n");
+        usage.append("  " + packageNameOption + " <pkg>             Package name [hessian.ambien]\n");
+        usage.append("  " + apolloBundleOption + " <filename>        Apollo credentials zip file [none]\n");
         return usage.toString();
     }
 
@@ -113,24 +124,24 @@ public class AmbienParams {
             amap.put(args[i], args[i+1]);
         }
 
-        if (null != (tkey = amap.remove("-configFile")))
+        if (null != (tkey = amap.remove(configFileOption)))
             if (!processConfigFile(tkey, amap))
                 return false;
 
-        apolloBundle = amap.remove("-apolloBundle");
+        apolloBundle = amap.remove(apolloBundleOption);
         if (null == apolloBundle) { // host is required
             System.err.println("Must provide an Apollo credentials file");
             return false;
         }
 
-        if (null != (tkey = amap.remove("-dc")))            dataCenter = tkey;
-        if (null != (tkey = amap.remove("-user")))          username = tkey;
-        if (null != (tkey = amap.remove("-pw")))            password = tkey;
-        if (null != (tkey = amap.remove("-kt")))            kt_list = tkey;
-        if (null != (tkey = amap.remove("-httpPort")))      httpPort = Integer.parseInt(tkey);
-        if (null != (tkey = amap.remove("-endpointRoot")))  endpointRoot = tkey;
-        if (null != (tkey = amap.remove("-packageName")))   package_name = tkey;
-        if (null != (tkey = amap.remove(("-o")))) {
+        if (null != (tkey = amap.remove(dataCenterOption)))    dataCenter = tkey;
+        if (null != (tkey = amap.remove(usernameOption)))      username = tkey;
+        if (null != (tkey = amap.remove(passwordOption)))      password = tkey;
+        if (null != (tkey = amap.remove(ktlistOption)))        kt_list = tkey;
+        if (null != (tkey = amap.remove(httpPortOption)))      httpPort = Integer.parseInt(tkey);
+        if (null != (tkey = amap.remove(endpointRootOption)))  endpointRoot = tkey;
+        if (null != (tkey = amap.remove(packageNameOption)))   package_name = tkey;
+        if (null != (tkey = amap.remove((outputDirOption)))) {
             if (tkey.endsWith("\\"))
                 tkey = tkey.substring(0, tkey.length()-1);
             output_dir = tkey;
