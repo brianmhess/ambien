@@ -2,6 +2,7 @@ package hessian.ambien;
 
 import com.datastax.oss.driver.shaded.guava.common.collect.Lists;
 import com.datastax.oss.driver.shaded.guava.common.io.Files;
+import org.springframework.util.FileSystemUtils;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,30 +36,40 @@ public class AmbienController {
         sb.append("    <tr>\n");
         sb.append("      <td><label for=\"apolloBundle\">Cloud Secure Connect Bundle:</label></td>");
         sb.append("      <td><input type=\"file\" id=\"apolloBundle\" name=\"apolloBundle\" required></td>");
+        sb.append("      <td></td>");
         sb.append("    </tr>\n");
         sb.append("    <tr>\n");
         sb.append("      <td><label for=\"username\">Username:</label></td>");
         sb.append("      <td><input type=\"text\" id=\"username\" name=\"username\" required></td>");
+        sb.append("      <td></td>");
         sb.append("    </tr>\n");
         sb.append("    <tr>\n");
         sb.append("      <td><label for=\"password\">Password:</label></td>");
         sb.append("      <td><input type=\"text\" id=\"password\" name=\"password\" required></td>");
+        sb.append("      <td></td>");
         sb.append("    </tr>\n");
         sb.append("    <tr>\n");
-        sb.append("      <td><label for=\"keyspaceTableList\">Keyspace/Table List (<font style=\"font-family:courier;\">ks1.tbl1[,ks2.tbl2,...ks.tbl]</font>):</label></td>");
+        sb.append("      <td><label for=\"keyspaceTableList\">Keyspace/Table List:</label></td>");
         sb.append("      <td><input type=\"text\" id=\"keyspaceTableList\" name=\"keyspaceTableList\" required></td>");
+        sb.append("      <td><font style=\"font-family:courier;\">ks1.tbl1[,ks2.tbl2,...ks.tbl]</font></td>");
         sb.append("    </tr>\n");
         sb.append("    <tr>\n");
         sb.append("      <td><label for=\"httpPort\">HTTP Port:</label></td>");
         sb.append("      <td><input type=\"text\" id=\"httpPort\" name=\"httpPort\" value=\"8222\"></td>");
+        sb.append("      <td></td>");
+        sb.append("    </tr>\n");
         sb.append("    </tr>\n");
         sb.append("    <tr>\n");
         sb.append("      <td><label for=\"endpointRoot\">Endpont Root:</label></td>");
         sb.append("      <td><input type=\"text\" id=\"endpointRoot\" name=\"endpointRoot\" value=\"api/$keyspace/$table\"></td>");
+        sb.append("      <td>REST endpoint root. Use <font style=\"font-family:courier;\">$keyspace</font> for the keyspace name, <font style=\"font-family:courier;\">$table</font> for the table name</td>");
+        sb.append("    </tr>\n");
         sb.append("    </tr>\n");
         sb.append("    <tr>\n");
         sb.append("      <td><label for=\"packageName\">Package Name:</label></td>");
         sb.append("      <td><input type=\"text\" id=\"packageName\" name=\"packageName\" value=\"hessian.ambien\"></td>");
+        sb.append("      <td>Java package for generated code.</td>");
+        sb.append("    </tr>\n");
         sb.append("    </tr>\n");
         sb.append("    </table>\n");
 
@@ -138,7 +149,7 @@ public class AmbienController {
             throw new RuntimeException("Ambien had an IOException");
         }
         finally {
-            outputDir.delete();
+            FileSystemUtils.deleteRecursively(outputDir);
             bundleFile.delete();
         }
     }
