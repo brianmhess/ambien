@@ -24,6 +24,7 @@ public class AmbienBoilerplate {
     public boolean produceBoilerplate() {
         return makeDirectoryStructure()
                 && makePomXml()
+                && makeReadme()
                 && makeApplicationProperties()
                 && makeApplication()
                 && makeLastUpdatedStateListener()
@@ -51,6 +52,36 @@ public class AmbienBoilerplate {
             return false;
         }
         return tfile.mkdirs();
+    }
+
+    private boolean makeReadme() {
+        String contents = "# Brought to you by Ambien\n" +
+                "\n" +
+                "## Contents\n" +
+                "This directory contains source code for a Spring Boot applicaion\n" +
+                "that is a REST API for tables in a DSE cluster, including create,\n" +
+                "update, delete, and read operations.  The various read operations are\n" +
+                "generated based on the schema of the tables.\n" +
+                "\n" +
+                "The intention is that you can modify the generated code to suit your needs \n" +
+                "(tweak some code, add some endpoints, remove unneeded ones, etc).\n" +
+                "\n" +
+                "## Building\n" +
+                "To build the code, simply run:\n" +
+                "```\n" +
+                "mvn clean package\n" +
+                "```\n" +
+                "\n" +
+                "## Running\n" +
+                "To run the generated code, simply run:\n" +
+                "```\n" +
+                "java -jar target/*.jar\n" +
+                "```\n" +
+                "\n" +
+                "## Enjoy\n" +
+                "Now, REST up and Enjoy!\n";
+
+        return Ambien.writeFile(output_dir + File.separator + "README.md", contents);
     }
 
     private boolean makePomXml() {
