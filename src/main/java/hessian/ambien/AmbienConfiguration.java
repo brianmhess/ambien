@@ -17,12 +17,6 @@ public class AmbienConfiguration {
                 "import org.springframework.beans.factory.annotation.Value;\n" +
                 "import org.springframework.context.annotation.Bean;\n" +
                 "import org.springframework.context.annotation.Configuration;\n" +
-                "import org.springframework.util.StreamUtils;\n" +
-                "\n" +
-                "import java.io.File;\n" +
-                "import java.io.IOException;" +
-                "import java.io.FileOutputStream;\n" +
-                "import java.io.InputStream;\n" +
                 "\n" +
                 "import " + params.package_name + ".dao.*;" +
                 "\n" +
@@ -38,14 +32,8 @@ public class AmbienConfiguration {
                 "    @Value(\"${dse.password}\")\n" +
                 "    private String password;\n" +
                 "\n" +
-                "    private File apolloCredentialsFile;\n" +
-                "\n" +
                 "    public String getApolloCredentials() {\n" +
                 "        return this.apolloCredentials;\n" +
-                "    }\n" +
-                "\n" +
-                "    public File getApolloCredentialsFile() {\n" +
-                "        return this.apolloCredentialsFile;\n" +
                 "    }\n" +
                 "\n" +
                 "    public String getUsername() {\n" +
@@ -58,21 +46,8 @@ public class AmbienConfiguration {
                 "\n" +
                 "    @Bean\n" +
                 "    public DseSession dseSession(LastUpdatedStateListener lastUpdatedStateListener, LastUpdatedSchemaListener lastUpdateSchemaListener) {\n" +
-                "        try {\n" +
-                "            this.apolloCredentialsFile = File.createTempFile(\"dsecscb\", \".zip\");\n" +
-                "            FileOutputStream fos = new FileOutputStream(this.apolloCredentialsFile);\n" +
-                "            InputStream credsInputStream = this.getClass().getResourceAsStream(this.apolloCredentials);\n" +
-                "            StreamUtils.copy(credsInputStream, fos);\n" +
-                "            credsInputStream.close();\n" +
-                "            fos.close();\n" +
-                "        }\n" +
-                "        catch (IOException ioe) {\n" +
-                "            throw new RuntimeException(\"Could not save cloud secure connect bundle to filesystem (\"\n" +
-                "                    + ((null == this.apolloCredentialsFile) ? \" <null> \" : this.apolloCredentialsFile.getAbsolutePath()) + \")\");\n" +
-                "        }\n" +
-                "\n" +
                 "        DseSessionBuilder dseSessionBuilder = DseSession.builder()\n" +
-                "                .withCloudSecureConnectBundle(this.apolloCredentialsFile.getAbsolutePath())\n" +
+                "                .withCloudSecureConnectBundle(this.getClass().getResourceAsStream(this.apolloCredentials))\n" +
                 "                .withAuthCredentials(this.username, this.password);\n" +
                 "        dseSessionBuilder.withNodeStateListener(lastUpdatedStateListener);\n" +
                 "        dseSessionBuilder.withSchemaChangeListener(lastUpdateSchemaListener);\n" +

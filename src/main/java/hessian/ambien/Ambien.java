@@ -31,6 +31,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.*;
 import java.net.InetSocketAddress;
+import java.nio.file.Path;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
@@ -55,8 +56,7 @@ public class Ambien {
     private void setup() {
         // Connect to Cassandra
         DseSessionBuilder builder = DseSession.builder()
-                .withCloudSecureConnectBundle(params.apolloBundle)
-//                .withLocalDatacenter(params.dataCenter)
+                .withCloudSecureConnectBundle((new File(params.apolloBundle).toPath()))
                 .withAuthCredentials(params.username, params.password);
 
         session = builder.build();
