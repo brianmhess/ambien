@@ -108,7 +108,7 @@ public class AmbienBoilerplate {
                 "\n" +
                 "\t<properties>\n" +
                 "\t\t<!-- DSE -->\n" +
-                "\t\t<dse-java-driver.version>2.2.0-cloud-01</dse-java-driver.version>\n" +
+                "\t\t<dse-java-driver.version>2.3.0</dse-java-driver.version>\n" +
                 "\n" +
                 "\t\t<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>\n" +
                 "\t\t<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>\n" +
@@ -130,16 +130,6 @@ public class AmbienBoilerplate {
                 "\n" +
                 "\n" +
                 "\t<repositories>\n" +
-                "\t\t<repository>\n" +
-                "\t\t\t<id>datastax-releases-public-local</id>\n" +
-                "\t\t\t<url>https://repo.datastax.com/datastax-public-releases-local/</url>\n" +
-                "\t\t\t<releases>\n" +
-                "\t\t\t\t<enabled>true</enabled>\n" +
-                "\t\t\t</releases>\n" +
-                "\t\t\t<snapshots>\n" +
-                "\t\t\t\t<enabled>false</enabled>\n" +
-                "\t\t\t</snapshots>\n" +
-                "\t\t</repository>\n" +
                 "\t\t<repository>\n" +
                 "\t\t\t<id>1-data-local</id>\n" +
                 "\t\t\t<name>datat2</name>\n" +

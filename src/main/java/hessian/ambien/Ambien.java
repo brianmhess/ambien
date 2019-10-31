@@ -48,7 +48,7 @@ public class Ambien {
     private void setup() {
         // Connect to Cassandra
         DseSessionBuilder builder = DseSession.builder()
-                .withCloudSecureConnectBundle(params.apolloBundle)
+                .withCloudSecureConnectBundle((new File(params.apolloBundle)).toPath())
                 .withAuthCredentials(params.username, params.password);
 
         session = builder.build();
@@ -212,4 +212,3 @@ public class Ambien {
         return Ambien.writeFile(fname, page);
     }
 }
-
