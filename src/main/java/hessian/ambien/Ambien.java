@@ -31,13 +31,10 @@ import java.util.List;
 
 public class Ambien {
     private String version = "0.0.1";
-    private AmbienParams params = new AmbienParams();
+    private AmbienParams ambienParams = new AmbienParams();
 
-    private Cluster cluster = null;
-    private Session session = null;
-
-    private String cqlSchema = null;
-    private String filename = null;
+    private Cluster ambienCluster = null;
+    private Session ambienSession = null;
 
     private String usage() {
         StringBuilder usage = new StringBuilder("version: ").append(version).append("\n");
@@ -50,21 +47,21 @@ public class Ambien {
         throws KeyStoreException, FileNotFoundException, IOException, NoSuchAlgorithmException,
             KeyManagementException, CertificateException, UnrecoverableKeyException {
         TrustManagerFactory tmf = null;
-        if (null != params.truststorePath) {
+        if (null != ambienParams.truststorePath) {
             KeyStore tks = KeyStore.getInstance("JKS");
-            tks.load(new FileInputStream(new File(params.truststorePath)),
-                    params.truststorePwd.toCharArray());
+            tks.load(new FileInputStream(new File(ambienParams.truststorePath)),
+                    ambienParams.truststorePwd.toCharArray());
             tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             tmf.init(tks);
         }
 
         KeyManagerFactory kmf = null;
-        if (null != params.keystorePath) {
+        if (null != ambienParams.keystorePath) {
             KeyStore kks = KeyStore.getInstance("JKS");
-            kks.load(new FileInputStream(new File(params.keystorePath)),
-                    params.keystorePwd.toCharArray());
+            kks.load(new FileInputStream(new File(ambienParams.keystorePath)),
+                    ambienParams.keystorePwd.toCharArray());
             kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-            kmf.init(kks, params.keystorePwd.toCharArray());
+            kmf.init(kks, ambienParams.keystorePwd.toCharArray());
         }
 
         SSLContext sslContext = SSLContext.getInstance("TLS");
@@ -80,19 +77,19 @@ public class Ambien {
                CertificateException, UnrecoverableKeyException  {
         // Connect to Cassandra
         Cluster.Builder clusterBuilder = Cluster.builder()
-            .addContactPoint(params.host)
-            .withPort(params.port)
+            .addContactPoint(ambienParams.host)
+            .withPort(ambienParams.port)
             .withLoadBalancingPolicy(new TokenAwarePolicy( DCAwareRoundRobinPolicy.builder().build()));
-        if (null != params.username)
-            clusterBuilder = clusterBuilder.withCredentials(params.username, params.password);
-        if (null != params.truststorePath)
+        if (null != ambienParams.username)
+            clusterBuilder = clusterBuilder.withCredentials(ambienParams.username, ambienParams.password);
+        if (null != ambienParams.truststorePath)
             clusterBuilder = clusterBuilder.withSSL(createSSLOptions());
 
-        cluster = clusterBuilder.build();
-        if (null == cluster) {
-            throw new IOException("Could not create cluster");
+        ambienCluster = clusterBuilder.build();
+        if (null == ambienCluster) {
+            throw new IOException("Could not create ambienCluster");
         }
-        session = cluster.connect();
+        ambienSession = ambienCluster.connect();
     }
 
     private boolean cleanup(boolean retval) {
@@ -101,24 +98,33 @@ public class Ambien {
     }
 
     private void cleanup() {
-        if (null != session)
-            session.close();
-        if (null != cluster)
-            cluster.close();
+        if (null != ambienSession)
+            ambienSession.close();
+        if (null != ambienCluster)
+            ambienCluster.close();
     }
     
     private boolean run(String[] args)
         throws IOException, KeyStoreException, NoSuchAlgorithmException, KeyManagementException,
                CertificateException, UnrecoverableKeyException {
-        if (!params.parseArgs(args)) {
+        if (!ambienParams.parseArgs(args)) {
             System.err.println("Bad arguments");
             System.err.println(usage());
             return false;
         }
-        System.err.println("Running with: " + params);
+        System.err.println("Running with: " + ambienParams);
 
         // Setup
         setup();
+
+        return makeRest(ambienSession, ambienParams);
+    }
+
+    public boolean makeRest(Session session, AmbienParams params) {
+        return makeRest(session, params, null);
+    }
+
+    public boolean makeRest(Session session, AmbienParams params, String keyspaceName) {
         File outFile = new File(params.output_dir);
         if (!outFile.isDirectory()) {
             System.err.println("Output directory must be a directory");
@@ -130,13 +136,14 @@ public class Ambien {
         }
 
         // Produce Boilerplate (pom.xml, etc)
-        AmbienBoilerplate ab = new AmbienBoilerplate(params);
+        AmbienBoilerplate ab = new AmbienBoilerplate(params, keyspaceName);
         if (!ab.produceBoilerplate()) {
             System.err.println("Had trouble producing boilerplate");
             return cleanup(false);
         }
 
         List<String> restList = new ArrayList<String>();
+        Cluster cluster = session.getCluster();
         Metadata m = cluster.getMetadata();
         CodecRegistry cr = cluster.getConfiguration().getCodecRegistry();
         for (int idx = 0; idx < params.keyspace_name.size(); idx++) {
@@ -160,14 +167,14 @@ public class Ambien {
             regularCols.removeAll(partitionCols);
 
             // Produce Domain Classes
-            AmbienDomain ad = new AmbienDomain(ksname, tblname, partitionCols, clusteringCols, regularCols, cr, params.srcDomainDir, params);
+            AmbienDomain ad = new AmbienDomain((null != keyspaceName) ? keyspaceName : ksname, tblname, partitionCols, clusteringCols, regularCols, cr, params.srcDomainDir, params);
             if (!ad.produceDomainClasses()) {
                 System.err.println("Had trouble producing domain classes");
                 return cleanup(false);
             }
 
             // Produce Repository Classes
-            AmbienRepository ar = new AmbienRepository(ksname, tblname, params, partitionCols, clusteringCols, regularCols, cr, restList);
+            AmbienRepository ar = new AmbienRepository((null != keyspaceName) ? keyspaceName : ksname, tblname, params, partitionCols, clusteringCols, regularCols, cr, restList);
             if (!ar.produceRepositoryClasses()) {
                 System.err.println("Had trouble producing repository and controller classes");
                 return cleanup(false);

@@ -12,10 +12,10 @@ public class AmbienBoilerplate {
     private String output_dir = null;
     private String hessianTypeparserDir = null;
 
-    public AmbienBoilerplate(AmbienParams params) {
+    public AmbienBoilerplate(AmbienParams params, String keyspaceName) {
         this.params = params;
         this.host = params.host;
-        this.keyspace = params.keyspace_name.get(0);
+        this.keyspace = (null == keyspaceName) ? params.keyspace_name.get(0) : keyspaceName;
         this.output_dir = params.output_dir;
         this.hessianTypeparserDir = params.output_dir + File.separator + "repo" + File.separator + "hessian" + File.separator + "typeparser" + File.separator + "0.1";
     }
@@ -319,9 +319,9 @@ public class AmbienBoilerplate {
                 "                        .withPort(port)\n" +
                 "                        .withLoadBalancingPolicy(new TokenAwarePolicy( DCAwareRoundRobinPolicy.builder().build() ) );\n" +
                 ((null == params.username) ?  "" : "        if (null != username)\n" +
-                "            clusterBuilder = clusterBuilder.withCredentials(username, password);\n") +
+                "            dseClusterBuilder = dseClusterBuilder.withCredentials(username, password);\n") +
                 ((null == params.truststorePwd) ?  "" : "        if (null != truststorePath)\n" +
-                "            clusterBuilder = clusterBuilder.withSSL(createSSLOptions(truststorePath, truststorePwd, keystorePath, keystorePwd));\n") +
+                "            dseClusterBuilder = dseClusterBuilder.withSSL(createSSLOptions(truststorePath, truststorePwd, keystorePath, keystorePwd));\n") +
                 "        return dseClusterBuilder.build();\n" +
                 "    }\n" +
                 "\n" +

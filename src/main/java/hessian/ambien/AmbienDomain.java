@@ -2,7 +2,6 @@ package hessian.ambien;
 
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.core.ColumnMetadata;
-import javafx.util.Pair;
 
 import java.io.File;
 import java.util.ArrayList;

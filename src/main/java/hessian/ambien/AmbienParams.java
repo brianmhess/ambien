@@ -47,6 +47,30 @@ public class AmbienParams {
         return usage.toString();
     }
 
+    public AmbienParams() { }
+
+    public AmbienParams(String kt_list, String package_name, String endpointRoot, String output_dir,
+                        String host, int port, String username, String password, int httpPort,
+                        String truststorePath, String truststorePwd,
+                        String keystorePath, String keystorePwd) {
+        this.host = host;
+        this.port = port;
+        this.username = username;
+        this.password = password;
+        this.truststorePath = truststorePath;
+        this.truststorePwd = truststorePwd;
+        this.keystorePath = keystorePath;
+        this.keystorePwd = keystorePwd;
+        this.kt_list = kt_list;
+        this.output_dir = output_dir;
+        this.httpPort = httpPort;
+        this.endpointRoot = endpointRoot;
+        this.package_name = package_name;
+
+        setPaths();
+        makeKeyspaceTableLists();
+    }
+
     private boolean validateArgs() {
         if (null == host) {
             System.err.println("No host provided.");
