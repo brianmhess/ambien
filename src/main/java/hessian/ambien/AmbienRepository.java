@@ -145,7 +145,7 @@ public class AmbienRepository {
         for (i = 1; i < partitionCols.size(); i++)
             sbc.append(", anyParser.<" + typeFor(partitionCols.get(i)) + ">parse(" + partitionCols.get(i).getName() + ", " + typeFor(partitionCols.get(i)) + ".class)");
         for (i = 0; i < clusteringCols.size(); i++)
-            sbc.append(", anyParser<" + typeFor(clusteringCols.get(i)) + ">.parse(" + clusteringCols.get(i).getName() + ", " + typeFor(clusteringCols.get(i)) + ".class)");
+            sbc.append(", anyParser.<" + typeFor(clusteringCols.get(i)) + ">parse(" + clusteringCols.get(i).getName() + ", " + typeFor(clusteringCols.get(i)) + ".class)");
         sbc.append(");\n");
         sbc.append("\t}\n\n");
         restEndpoints.add(exampleEndpoint);
