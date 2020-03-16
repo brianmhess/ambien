@@ -5,7 +5,7 @@
 
     <groupId>hessian</groupId>
     <artifactId>ambien</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>1.3-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <properties>

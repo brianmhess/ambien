@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Ambien {
-    private String version = "0.1.2";
+    private String version = "0.1.3";
     private AmbienParams params = new AmbienParams();
 
     private CqlSession session = null;
