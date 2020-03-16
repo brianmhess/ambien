@@ -5,11 +5,11 @@ It gives you rest...
 `mvn clean package`
 
 ## Running
-`java -jar target/ambien-0.1-SNAPSHOT-jar-with-dependencies.jar <options>`
+`target/ambien <options>`
 
 ## Usage:
 ```
-version: 0.1.1
+version: 0.1.3
 Usage: ambien -host <hostname> -k <keyspaceName> -t <tableName> -o <outputDir> [options]
 OPTIONS:
   -host <hostname>               Contact point for DSE [required]
